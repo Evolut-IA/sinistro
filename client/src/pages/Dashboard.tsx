@@ -87,6 +87,18 @@ export default function Dashboard() {
     }
   };
 
+  const handlePaginaAnterior = () => {
+    if (filters.pagina > 1) {
+      setFilters({ ...filters, pagina: filters.pagina - 1 });
+    }
+  };
+
+  const handleProximaPagina = () => {
+    if (dashboardData?.paginacao && filters.pagina < dashboardData.paginacao.total_paginas) {
+      setFilters({ ...filters, pagina: filters.pagina + 1 });
+    }
+  };
+
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case "aberto": return "bg-gray-600";
@@ -296,6 +308,7 @@ export default function Dashboard() {
                 <Button
                   variant="outline"
                   disabled={dashboardData.paginacao.pagina <= 1}
+                  onClick={handlePaginaAnterior}
                   className="text-subtitle-dark font-medium rounded border border-gray-600"
                   data-testid="button-anterior"
                 >
@@ -306,6 +319,7 @@ export default function Dashboard() {
                 </span>
                 <Button
                   disabled={dashboardData.paginacao.pagina >= dashboardData.paginacao.total_paginas}
+                  onClick={handleProximaPagina}
                   className="btn-gradient text-white font-medium rounded"
                   data-testid="button-proxima"
                 >
