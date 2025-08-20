@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Paperclip, Send, AlertTriangle, Flag, RotateCcw } from "lucide-react";
+import { Paperclip, Send, AlertTriangle, Flag, RotateCcw, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,12 +11,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { callWebhook } from "@/lib/webhooks";
 import { useToastNotification } from "@/components/Toast";
+import { Link } from "wouter";
 import type { Sinistro, Documento, Pendencia, Andamento } from "@shared/schema";
 
 export default function DetalheSinistro() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const searchParams = new URLSearchParams(location.split("?")[1]);
   const sinistroId = searchParams.get("id");
+
+  // Fetch recent sinistros to show if no ID is provided
+  const { data: dashboardData } = useQuery({
+    queryKey: ["/api/dashboard"],
+    queryParams: { tamanho_pagina: 1 }, // Just get the first one
+    enabled: !sinistroId,
+  });
 
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [pendenciaModalOpen, setPendenciaModalOpen] = useState(false);
@@ -197,10 +205,45 @@ export default function DetalheSinistro() {
 
   if (!sinistroId) {
     return (
-      <div className="bg-dark min-h-screen flex items-center justify-center">
-        <div className="container-gradient-dark rounded-lg p-8">
-          <p className="text-white text-center">ID do sinistro não fornecido</p>
-        </div>
+      <div className="cor-fundo-site min-h-screen">
+        <section className="py-12">
+          <div className="container mx-auto px-6">
+            <div className="rounded-lg p-8 container-gradient-dark text-center">
+              <h1 className="text-4xl font-bold text-white mb-4">Detalhe do Sinistro</h1>
+              <p className="text-subtitle-dark text-lg mb-8">
+                Para visualizar os detalhes de um sinistro, você precisa selecioná-lo no Dashboard.
+              </p>
+              
+              <div className="space-y-4">
+                <Link href="/dashboard">
+                  <Button className="btn-gradient text-white font-medium rounded flex items-center mx-auto" data-testid="button-ir-dashboard">
+                    <ArrowLeft className="mr-2" size={16} />
+                    Ir para o Dashboard
+                  </Button>
+                </Link>
+                
+                {dashboardData?.lista?.length > 0 && (
+                  <div className="mt-8">
+                    <p className="text-white mb-4">Ou clique em um sinistro recente:</p>
+                    <div className="max-w-md mx-auto space-y-2">
+                      {dashboardData.lista.slice(0, 3).map((sinistro) => (
+                        <button
+                          key={sinistro.id}
+                          onClick={() => setLocation(`/detalhe-do-sinistro?id=${sinistro.id}`)}
+                          className="w-full p-3 text-left bg-gray-800 hover:bg-gray-700 rounded border border-gray-600 transition-colors"
+                          data-testid={`button-sinistro-${sinistro.id}`}
+                        >
+                          <div className="text-white font-medium">{sinistro.protocolo || "Sem protocolo"}</div>
+                          <div className="text-subtitle-dark text-sm">{sinistro.segurado_nome}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     );
   }
