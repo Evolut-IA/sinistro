@@ -14,7 +14,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data_inicio: data_inicio as string,
         data_fim: data_fim as string,
         busca: busca as string,
-        status: status as string[],
+        status: status ? (status as string).split(',') : [],
         seguradora: seguradora as string,
         pagina: parseInt(pagina as string),
         tamanho_pagina: parseInt(tamanho_pagina as string),

@@ -51,6 +51,23 @@ export default function Dashboard() {
 
   const { data: dashboardData, refetch } = useQuery<ListResponse>({
     queryKey: ["/api/dashboard", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.data_inicio) params.set('data_inicio', filters.data_inicio);
+      if (filters.data_fim) params.set('data_fim', filters.data_fim);
+      if (filters.busca) params.set('busca', filters.busca);
+      if (filters.status.length > 0) params.set('status', filters.status.join(','));
+      if (filters.seguradora) params.set('seguradora', filters.seguradora);
+      params.set('pagina', filters.pagina.toString());
+      params.set('tamanho_pagina', filters.tamanho_pagina.toString());
+      
+      const url = `/api/dashboard?${params.toString()}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data');
+      }
+      return response.json();
+    },
     enabled: true,
   });
 
