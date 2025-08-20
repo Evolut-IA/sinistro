@@ -45,6 +45,18 @@ export default function DetalheSinistro() {
     enabled: !!sinistroId,
   });
 
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case "aberto": return "bg-gray-600";
+      case "enviado": return "bg-blue-600";
+      case "em_analise": return "bg-yellow-600";
+      case "aprovado": return "bg-green-600";
+      case "negado": return "bg-red-600";
+      case "concluido": return "bg-green-800";
+      default: return "bg-gray-600";
+    }
+  };
+
   const { data: documentos } = useQuery<Documento[]>({
     queryKey: ["/api/documentos", sinistroId],
     enabled: !!sinistroId,
@@ -234,8 +246,8 @@ export default function DetalheSinistro() {
                   </div>
                   <div>
                     <p className="text-subtitle-dark text-sm">Status</p>
-                    <span className="px-2 py-1 rounded text-xs font-medium bg-yellow-600 text-white" data-testid="text-status">
-                      {sinistro?.status || "—"}
+                    <span className={`px-2 py-1 rounded text-xs font-medium text-white ${getStatusBadgeColor(sinistro?.status || "")}`} data-testid="text-status">
+                      {sinistro?.status?.replace("_", " ") || "—"}
                     </span>
                   </div>
                   <div>
