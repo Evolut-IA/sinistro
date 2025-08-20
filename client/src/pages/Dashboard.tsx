@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Clock, Shield, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,7 @@ export default function Dashboard() {
 
   const [isLoading, setIsLoading] = useState(false);
   const { showSuccess, showError } = useToastNotification();
+  const [, setLocation] = useLocation();
 
   const { data: dashboardData, refetch } = useQuery<ListResponse>({
     queryKey: ["/api/dashboard", filters],
@@ -259,24 +260,24 @@ export default function Dashboard() {
                 <tbody>
                   {dashboardData?.lista?.length ? (
                     dashboardData.lista.map((sinistro) => (
-                      <Link key={sinistro.id} href={`/detalhe-do-sinistro?id=${sinistro.id}`}>
-                        <tr
-                          className="border-b border-gray-700 cursor-pointer hover:bg-gray-800/50 transition-colors"
-                          data-testid={`row-sinistro-${sinistro.id}`}
-                        >
-                          <td className="py-3 px-4 text-subtitle-dark">{sinistro.protocolo || "—"}</td>
-                          <td className="py-3 px-4 text-white">{sinistro.segurado_nome}</td>
-                          <td className="py-3 px-4 text-white">{sinistro.placa}</td>
-                          <td className="py-3 px-4 text-white">{sinistro.seguradora_nome}</td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-1 rounded text-xs font-medium text-white ${getStatusBadgeColor(sinistro.status)}`}>
-                              {sinistro.status.replace("_", " ")}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-white">{new Date(sinistro.data_aviso).toLocaleDateString("pt-BR")}</td>
-                          <td className="py-3 px-4 text-white">{new Date(sinistro.prazo_limite).toLocaleDateString("pt-BR")}</td>
-                        </tr>
-                      </Link>
+                      <tr
+                        key={sinistro.id}
+                        className="border-b border-gray-700 cursor-pointer hover:bg-gray-800/50 transition-colors"
+                        onClick={() => setLocation(`/detalhe-do-sinistro?id=${sinistro.id}`)}
+                        data-testid={`row-sinistro-${sinistro.id}`}
+                      >
+                        <td className="py-3 px-4 text-subtitle-dark">{sinistro.protocolo || "—"}</td>
+                        <td className="py-3 px-4 text-white">{sinistro.segurado_nome}</td>
+                        <td className="py-3 px-4 text-white">{sinistro.placa}</td>
+                        <td className="py-3 px-4 text-white">{sinistro.seguradora_nome}</td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-1 rounded text-xs font-medium text-white ${getStatusBadgeColor(sinistro.status)}`}>
+                            {sinistro.status.replace("_", " ")}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-white">{new Date(sinistro.data_aviso).toLocaleDateString("pt-BR")}</td>
+                        <td className="py-3 px-4 text-white">{new Date(sinistro.prazo_limite).toLocaleDateString("pt-BR")}</td>
+                      </tr>
                     ))
                   ) : (
                     <tr>
