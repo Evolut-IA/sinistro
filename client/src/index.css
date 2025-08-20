@@ -41,21 +41,37 @@
   --font-mono: Menlo, monospace;
   --radius: 0.5rem;
   
-  /* Custom color scheme for insurance app */
-  --dark-bg: hsl(0, 0%, 2.4%);
-  --dark-container-from: hsl(0, 0%, 10.2%);
-  --dark-container-to: hsl(0, 0%, 7.8%);
-  --light-bg: hsl(0, 0%, 97.6%);
-  --light-container-from: hsl(0, 0%, 89.8%);
-  --light-container-to: hsl(0, 0%, 92.9%);
-  --btn-from: hsl(214, 87%, 60%);
-  --btn-to: hsl(221, 76%, 48%);
-  --subtitle-dark: hsl(0, 0%, 68.6%);
-  --subtitle-light: hsl(0, 0%, 40%);
-  --text-gradient-from: hsl(214, 87%, 60%);
-  --text-gradient-to: hsl(221, 76%, 48%);
-  --icon-gradient-from: hsl(214, 87%, 60%);
-  --icon-gradient-to: hsl(221, 76%, 48%);
+  /* Tema Lua (Escuro) - Estado inicial */
+  --cor-fundo-site: #060606;
+  --cor-container-degrade-baixo: #1A1A1A;
+  --cor-container-degrade-cima: #141414;
+  --cor-botao-degrade-esquerda: #387EF3;
+  --cor-botao-degrade-direita: #2155DC;
+  --cor-texto-botoes: #FFFFFF;
+  --cor-icone-botoes: #FFFFFF;
+  --cor-titulo: #FFFFFF;
+  --cor-subtitulo: #AFAFAF;
+  --cor-texto-principal-degrade-esquerda: #387EF3;
+  --cor-texto-principal-degrade-direita: #2155DC;
+  --cor-icone-degrade-esquerda: #387EF3;
+  --cor-icone-degrade-direita: #2155DC;
+}
+
+.tema-sol {
+  /* Tema Sol (Claro) */
+  --cor-fundo-site: #f9f9f9;
+  --cor-container-degrade-baixo: #e5e5e5;
+  --cor-container-degrade-cima: #ededed;
+  --cor-botao-degrade-esquerda: #387EF3;
+  --cor-botao-degrade-direita: #2155DC;
+  --cor-texto-botoes: #060606;
+  --cor-icone-botoes: #060606;
+  --cor-titulo: #060606;
+  --cor-subtitulo: #888888;
+  --cor-texto-principal-degrade-esquerda: #387EF3;
+  --cor-texto-principal-degrade-direita: #2155DC;
+  --cor-icone-degrade-esquerda: #387EF3;
+  --cor-icone-degrade-direita: #2155DC;
 }
 
 .dark {
@@ -99,53 +115,54 @@
   }
 
   body {
-    @apply font-sans antialiased text-foreground;
+    @apply font-sans antialiased;
     font-family: var(--font-sans);
-    background: var(--dark-bg);
-    color: white;
+    background: var(--cor-fundo-site);
+    color: var(--cor-titulo);
   }
 }
 
 @layer components {
-  .container-gradient-dark {
-    background: linear-gradient(to bottom, var(--dark-container-from), var(--dark-container-to));
-  }
-  
-  .container-gradient-light {
-    background: linear-gradient(to bottom, var(--light-container-from), var(--light-container-to));
+  .container-gradient {
+    background: linear-gradient(to bottom, var(--cor-container-degrade-baixo), var(--cor-container-degrade-cima));
   }
   
   .btn-gradient {
-    background: linear-gradient(to right, var(--btn-from), var(--btn-to));
+    background: linear-gradient(to right, var(--cor-botao-degrade-esquerda), var(--cor-botao-degrade-direita));
+    color: var(--cor-texto-botoes);
   }
   
   .text-gradient {
-    background: linear-gradient(to right, var(--text-gradient-from), var(--text-gradient-to));
+    background: linear-gradient(to right, var(--cor-texto-principal-degrade-esquerda), var(--cor-texto-principal-degrade-direita));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   
   .icon-gradient {
-    background: linear-gradient(to right, var(--icon-gradient-from), var(--icon-gradient-to));
+    background: linear-gradient(to right, var(--cor-icone-degrade-esquerda), var(--cor-icone-degrade-direita));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   
-  .bg-dark {
-    background-color: var(--dark-bg);
+  .cor-titulo {
+    color: var(--cor-titulo);
   }
   
-  .bg-light {
-    background-color: var(--light-bg);
+  .cor-subtitulo {
+    color: var(--cor-subtitulo);
   }
-  
-  .text-subtitle-dark {
-    color: var(--subtitle-dark);
+
+  .cor-fundo-site {
+    background-color: var(--cor-fundo-site);
   }
-  
-  .text-subtitle-light {
-    color: var(--subtitle-light);
+
+  .cor-texto-botoes {
+    color: var(--cor-texto-botoes);
+  }
+
+  .cor-icone-botoes {
+    color: var(--cor-icone-botoes);
   }
 }

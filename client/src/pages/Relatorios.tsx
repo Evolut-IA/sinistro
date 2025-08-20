@@ -76,7 +76,7 @@ export default function Relatorios() {
   };
 
   return (
-    <div className="bg-light min-h-screen">
+    <div className="cor-fundo-site min-h-screen">
       {/* Header Section */}
       <section className="py-12">
         <div className="container mx-auto px-6">

@@ -82,13 +82,13 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="bg-dark min-h-screen">
+    <div className="cor-fundo-site min-h-screen">
       {/* Header Section */}
       <section className="py-12">
         <div className="container mx-auto px-6">
-          <div className="rounded-lg p-8 container-gradient-dark">
-            <h1 className="text-4xl font-bold text-white mb-2">Dashboard de Sinistros</h1>
-            <p className="text-subtitle-dark text-lg">Acompanhe e gerencie o ciclo completo</p>
+          <div className="rounded-lg p-8 container-gradient">
+            <h1 className="text-4xl font-bold cor-titulo mb-2">Dashboard de Sinistros</h1>
+            <p className="cor-subtitulo text-lg">Acompanhe e gerencie o ciclo completo</p>
           </div>
         </div>
       </section>
@@ -98,39 +98,39 @@ export default function Dashboard() {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* KPI Card 1 */}
-            <div className="rounded-lg p-6 container-gradient-dark">
+            <div className="rounded-lg p-6 container-gradient">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-semibold">Tempo médio</h3>
+                <h3 className="cor-titulo font-semibold">Tempo médio</h3>
                 <Clock className="text-2xl icon-gradient" size={32} />
               </div>
-              <div className="text-3xl font-bold text-white mb-2" data-testid="kpi-tempo-medio">
+              <div className="text-3xl font-bold cor-titulo mb-2" data-testid="kpi-tempo-medio">
                 {dashboardData?.kpis?.tempo_medio_dias || "--"}
               </div>
-              <p className="text-subtitle-dark text-sm">dias - Janeiro 2025</p>
+              <p className="cor-subtitulo text-sm">dias - Janeiro 2025</p>
             </div>
 
             {/* KPI Card 2 */}
-            <div className="rounded-lg p-6 container-gradient-dark">
+            <div className="rounded-lg p-6 container-gradient">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-semibold">% dentro do prazo</h3>
+                <h3 className="cor-titulo font-semibold">% dentro do prazo</h3>
                 <Shield className="text-2xl icon-gradient" size={32} />
               </div>
-              <div className="text-3xl font-bold text-white mb-2" data-testid="kpi-dentro-prazo">
+              <div className="text-3xl font-bold cor-titulo mb-2" data-testid="kpi-dentro-prazo">
                 {dashboardData?.kpis?.dentro_prazo_percent || "--"}%
               </div>
-              <p className="text-subtitle-dark text-sm">meta: 90% - Janeiro 2025</p>
+              <p className="cor-subtitulo text-sm">meta: 90% - Janeiro 2025</p>
             </div>
 
             {/* KPI Card 3 */}
-            <div className="rounded-lg p-6 container-gradient-dark">
+            <div className="rounded-lg p-6 container-gradient">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-semibold">Sinistros ativos</h3>
+                <h3 className="cor-titulo font-semibold">Sinistros ativos</h3>
                 <List className="text-2xl icon-gradient" size={32} />
               </div>
-              <div className="text-3xl font-bold text-white mb-2" data-testid="kpi-ativos">
+              <div className="text-3xl font-bold cor-titulo mb-2" data-testid="kpi-ativos">
                 {dashboardData?.kpis?.ativos || "--"}
               </div>
-              <p className="text-subtitle-dark text-sm">em análise - Janeiro 2025</p>
+              <p className="cor-subtitulo text-sm">em análise - Janeiro 2025</p>
             </div>
           </div>
         </div>
@@ -139,20 +139,20 @@ export default function Dashboard() {
       {/* Filters Section */}
       <section className="py-8">
         <div className="container mx-auto px-6">
-          <div className="rounded-lg p-6 mb-8 container-gradient-dark">
+          <div className="rounded-lg p-6 mb-8 container-gradient">
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
               <div>
-                <Label className="text-white text-sm font-medium mb-2">Data início</Label>
+                <Label className="cor-titulo text-sm font-medium mb-2">Data início</Label>
                 <Input
                   type="date"
                   value={filters.data_inicio}
                   onChange={(e) => setFilters({...filters, data_inicio: e.target.value})}
-                  className="w-full px-3 py-2 bg-dark border border-gray-600 rounded text-white"
+                  className="w-full px-3 py-2 cor-fundo-site border border-gray-600 rounded cor-titulo"
                   data-testid="input-data-inicio"
                 />
               </div>
               <div>
-                <Label className="text-white text-sm font-medium mb-2">Data fim</Label>
+                <Label className="cor-titulo text-sm font-medium mb-2">Data fim</Label>
                 <Input
                   type="date"
                   value={filters.data_fim}
@@ -225,18 +225,18 @@ export default function Dashboard() {
       {/* Claims Table */}
       <section className="py-8">
         <div className="container mx-auto px-6">
-          <div className="rounded-lg p-6 container-gradient-dark">
+          <div className="rounded-lg p-6 container-gradient">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-600">
-                    <th className="text-left py-3 px-4 text-white font-semibold">Número</th>
-                    <th className="text-left py-3 px-4 text-white font-semibold">Segurado</th>
-                    <th className="text-left py-3 px-4 text-white font-semibold">Placa</th>
-                    <th className="text-left py-3 px-4 text-white font-semibold">Seguradora</th>
-                    <th className="text-left py-3 px-4 text-white font-semibold">Status</th>
-                    <th className="text-left py-3 px-4 text-white font-semibold">Data de aviso</th>
-                    <th className="text-left py-3 px-4 text-white font-semibold">Prazo limite</th>
+                    <th className="text-left py-3 px-4 cor-titulo font-semibold">Número</th>
+                    <th className="text-left py-3 px-4 cor-titulo font-semibold">Segurado</th>
+                    <th className="text-left py-3 px-4 cor-titulo font-semibold">Placa</th>
+                    <th className="text-left py-3 px-4 cor-titulo font-semibold">Seguradora</th>
+                    <th className="text-left py-3 px-4 cor-titulo font-semibold">Status</th>
+                    <th className="text-left py-3 px-4 cor-titulo font-semibold">Data de aviso</th>
+                    <th className="text-left py-3 px-4 cor-titulo font-semibold">Prazo limite</th>
                   </tr>
                 </thead>
                 <tbody>
