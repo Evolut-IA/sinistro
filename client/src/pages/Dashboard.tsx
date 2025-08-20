@@ -51,7 +51,7 @@ export default function Dashboard() {
 
   const { data: dashboardData, refetch } = useQuery<ListResponse>({
     queryKey: ["/api/dashboard", filters],
-    enabled: false,
+    enabled: true,
   });
 
   const handleUpdateList = async () => {
