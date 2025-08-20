@@ -305,15 +305,17 @@ export default function Dashboard() {
             {/* Pagination */}
             {dashboardData?.paginacao && (
               <div className="flex justify-between items-center mt-6">
-                <Button
-                  variant="outline"
-                  disabled={dashboardData.paginacao.pagina <= 1}
-                  onClick={handlePaginaAnterior}
-                  className="text-subtitle-dark font-medium rounded border border-gray-600"
-                  data-testid="button-anterior"
-                >
-                  Anterior
-                </Button>
+                {dashboardData.paginacao.pagina > 1 ? (
+                  <Button
+                    onClick={handlePaginaAnterior}
+                    className="btn-gradient text-white font-medium rounded"
+                    data-testid="button-anterior"
+                  >
+                    Anterior
+                  </Button>
+                ) : (
+                  <div></div>
+                )}
                 <span className="text-white" data-testid="text-paginacao">
                   Página {dashboardData.paginacao.pagina} de {dashboardData.paginacao.total_paginas}
                 </span>
