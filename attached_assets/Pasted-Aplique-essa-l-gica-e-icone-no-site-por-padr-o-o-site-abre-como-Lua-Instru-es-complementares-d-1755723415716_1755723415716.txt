@@ -1,0 +1,93 @@
+Aplique essa lógica e icone no site (por padrão o site abre como 'Lua':
+
+Instruções complementares de tema com alternância Sol/Lua
+
+Componente do cabeçalho
+Nome do componente: ToggleTema
+Local: Header global, à direita do menu
+Elementos: IconeSol, IconeLua, Rótulo curto “Tema”
+Estado inicial: Lua visível e ativa, aplicando Estilo 1 da seção em todo o site
+Ação ao clicar: alternar o ícone visível e aplicar imediatamente a paleta correspondente sem animação, sem transição e sem hover
+
+Estados de tema e paletas
+
+Tema Lua ativo
+Descrição: modo escuro aplicando Estilo 1 da seção
+Cores globais
+CorFundoSite: #060606
+CorContainerDegradeBaixo: #1A1A1A
+CorContainerDegradeCima: #141414
+CorBotaoDegradeEsquerda: #387EF3
+CorBotaoDegradeDireita: #2155DC
+CorTextoBotoes: #FFFFFF
+CorIconeBotoes: #FFFFFF
+CorTitulo: #FFFFFF
+CorSubtitulo: #AFAFAF
+CorTextoPrincipalDegradeEsquerda: #387EF3
+CorTextoPrincipalDegradeDireita: #2155DC
+CorIconeDegradeEsquerda: #387EF3
+CorIconeDegradeDireita: #2155DC
+Comportamento do botão ToggleTema: exibir IconeLua; ao clicar, trocar para IconeSol e aplicar Tema Sol
+
+Tema Sol ativo
+Descrição: modo claro aplicando Estilo 2 da seção
+Cores globais
+CorFundoSite: #f9f9f9
+CorContainerDegradeBaixo: #e5e5e5
+CorContainerDegradeCima: #ededed
+CorBotaoDegradeEsquerda: #387EF3
+CorBotaoDegradeDireita: #2155DC
+CorTextoBotoes: #060606
+CorIconeBotoes: #060606
+CorTitulo: #060606
+CorSubtitulo: #e5e5e5
+CorTextoPrincipalDegradeEsquerda: #387EF3
+CorTextoPrincipalDegradeDireita: #2155DC
+CorIconeDegradeEsquerda: #387EF3
+CorIconeDegradeDireita: #2155DC
+Comportamento do botão ToggleTema: exibir IconeSol; ao clicar, trocar para IconeLua e aplicar Tema Lua
+
+Aplicação obrigatória dos tokens em toda a interface
+
+Plano de fundo
+Body, Header, Footer, modais e páginas devem usar CorFundoSite
+Containers, cards, banners, modais e painéis devem usar degradê vertical de CorContainerDegradeBaixo (na base) para CorContainerDegradeCima (no topo)
+
+Tipografia
+Títulos usam CorTitulo
+Subtítulos usam CorSubtitulo
+Textos principais que exigem destaque usam degradê horizontal de CorTextoPrincipalDegradeEsquerda para CorTextoPrincipalDegradeDireita aplicado ao texto
+Textos informativos comuns que não exigem destaque seguem a cor mais apropriada para o contraste do tema ativo, sem definir novas cores além das já listadas
+
+Botões e controles
+Fundos de todos os botões utilizam degradê horizontal CorBotaoDegradeEsquerda para CorBotaoDegradeDireita
+Rótulos de botões usam CorTextoBotoes
+Ícones dentro dos botões usam CorIconeBotoes
+Sem hover, sem transições, sem animações, sem alteração de opacidade, cursor ou background em qualquer estado interativo
+
+Ícones e gráficos
+Ícones decorativos fora de botões usam degradê horizontal CorIconeDegradeEsquerda para CorIconeDegradeDireita
+Gráficos e indicadores visuais devem herdar as cores do tema ativo, priorizando legibilidade sem introduzir novas paletas
+
+Tabelas e listas
+Cabeçalhos de tabela usam CorTitulo
+Linhas e células usam CorFundoSite como base e os containers aplicam o degradê definido para manter consistência
+Estados de seleção ou foco devem ser representados apenas por variação estrutural (exemplo: borda interna do container com a mesma cor do título), sem outline, sem mudança de cor em hover e sem transições
+
+Formulários e modais
+Campos, labels e mensagens seguem as cores do tema ativo: labels com CorSubtitulo, textos de ajuda com CorSubtitulo, valores e entradas com CorTitulo no Tema Lua e com CorTitulo no Tema Sol, mantendo contraste adequado
+Modais usam os mesmos containers com degradê do tema ativo
+
+Regras de interação do ToggleTema
+
+Botão ToggleTema
+Ícone e rótulo: mostrar IconeLua quando Tema Lua está ativo e IconeSol quando Tema Sol está ativo; o rótulo “Tema” permanece estático
+Ação onClick: se IconeLua estiver visível, aplicar imediatamente todas as cores do Tema Sol; se IconeSol estiver visível, aplicar imediatamente todas as cores do Tema Lua
+Escopo de aplicação: a troca de tema deve atualizar todas as páginas, componentes e containers já montados sem recarregar a página, respeitando a proibição de animações e transições
+Sem efeitos adicionais: não usar hover, não usar transform, não usar mudanças de opacidade, não usar outline, não alterar background em estados de interação
+
+Critérios de conformidade
+
+Consistência cromática: após alternar o tema, nenhum elemento pode manter cores do tema anterior
+Contraste: garantir legibilidade dos textos com as cores definidas para cada tema, sem criar novas cores além das listadas
+Persistência opcional: se o construtor do Lovable permitir armazenar estado global, manter o último tema selecionado durante a navegação; caso contrário, iniciar sempre no Tema Lua conforme estado inicial definido acima
