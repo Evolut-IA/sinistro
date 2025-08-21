@@ -122,9 +122,19 @@ export class MockStorage implements IStorage {
     const newClaim: Claim = {
       id: `claim-${Date.now()}`,
       created_at: new Date(),
-      ...claim,
+      placa: claim.placa,
+      cpf_segurado: claim.cpf_segurado,
+      data_evento: claim.data_evento,
+      local_evento_cidade: claim.local_evento_cidade,
+      local_evento_uf: claim.local_evento_uf,
+      tipo_sinistro: claim.tipo_sinistro,
+      status: claim.status || "aberto",
       franquia_prevista: claim.franquia_prevista?.toString() || "0",
-      prob_pt: claim.prob_pt?.toString() || null
+      prob_pt: claim.prob_pt?.toString() || null,
+      estimativa_id: claim.estimativa_id ?? null,
+      oficina_id: claim.oficina_id ?? null,
+      terceiro_token: claim.terceiro_token ?? null,
+      resumo: claim.resumo ?? null,
     };
     mockClaims.push(newClaim);
     return newClaim;

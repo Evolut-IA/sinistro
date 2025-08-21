@@ -59,7 +59,8 @@ const createStorageInstance = async (): Promise<IStorage> => {
     console.log("🔗 Connected to:", databaseUrl.replace(/:\/\/.*@/, '://***@'));
     return new PostgresStorage();
   } catch (error) {
-    console.log("⚠️  Database connection failed - falling back to mock storage:", error.message);
+    const message = error instanceof Error ? error.message : String(error);
+    console.log("⚠️  Database connection failed - falling back to mock storage:", message);
     return new MockStorage();
   }
 };
@@ -298,7 +299,7 @@ export class PostgresStorage implements IStorage {
         .insert(sinistros)
         .values({
           ...sinistro,
-          prazo_limite: prazoLimite.toISOString().split('T')[0]
+          prazo_limite: prazoLimite
         })
         .returning();
       

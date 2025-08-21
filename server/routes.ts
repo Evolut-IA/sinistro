@@ -139,6 +139,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create new claim (nova API)
+  app.post("/api/claims", async (req, res) => {
+    try {
+      const validated = insertClaimSchema.parse(req.body);
+      const storage = await getStorage();
+      const claim = await storage.createClaim(validated);
+      res.status(201).json(claim);
+    } catch (error) {
+      console.error("Error creating claim:", error);
+      res.status(500).json({ message: "Erro ao criar claim" });
+    }
+  });
+
   // Create new sinistro
   app.post("/api/sinistros", async (req, res) => {
     try {
