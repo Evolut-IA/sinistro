@@ -1,627 +1,636 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Paperclip, Send, AlertTriangle, Flag, RotateCcw, ArrowLeft } from "lucide-react";
+import { ArrowLeft, DollarSign, Clock, Wrench, Users, FileText, Calendar, MapPin, AlertTriangle, CheckCircle, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { callWebhook } from "@/lib/webhooks";
 import { useToastNotification } from "@/components/Toast";
-import { Link } from "wouter";
-import type { Sinistro, Documento, Pendencia, Andamento } from "@shared/schema";
+import TimelineSinistro from "@/components/TimelineSinistro";
+import UploaderMidia from "@/components/UploaderMidia";
+
+interface ClaimDetail {
+  id: string;
+  placa: string;
+  cpf_segurado: string;
+  data_evento: string;
+  local_evento_cidade: string;
+  local_evento_uf: string;
+  tipo_sinistro: string;
+  status: string;
+  franquia_prevista?: number;
+  prob_pt?: number;
+  resumo?: string;
+  created_at: string;
+}
+
+interface Estimativa {
+  valor_estimado: number;
+  horas_mo: number;
+  prob_pt: number;
+  resumo_json?: any;
+  created_at: string;
+}
+
+interface Oficina {
+  id: string;
+  nome: string;
+  cidade: string;
+  uf: string;
+  sla_medio_dias: number;
+  score_qualidade: number;
+}
+
+interface Agenda {
+  oficina_id: string;
+  data_agendada?: string;
+  status: string;
+}
+
+interface Terceiro {
+  token: string;
+  nome?: string;
+  cpf?: string;
+  email?: string;
+  telefone?: string;
+  status: string;
+}
+
+interface Arquivo {
+  id: string;
+  fonte: string;
+  tipo: string;
+  arquivo_url: string;
+  metadados_json?: any;
+  created_at: string;
+}
 
 export default function DetalheSinistro() {
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const searchParams = new URLSearchParams(location.split("?")[1]);
-  const sinistroId = searchParams.get("id");
-
-  // Fetch recent sinistros to show if no ID is provided
-  const { data: dashboardData } = useQuery({
-    queryKey: ["/api/dashboard"],
-    queryParams: { tamanho_pagina: 1 }, // Just get the first one
-    enabled: !sinistroId,
-  });
-
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  const [pendenciaModalOpen, setPendenciaModalOpen] = useState(false);
+  const claimId = searchParams.get("id");
+  
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState("");
-  const [motivoStatus, setMotivoStatus] = useState("");
-
-  // Upload document form state
-  const [uploadForm, setUploadForm] = useState({
-    tipo_documento: "",
-    arquivo_base64: "",
-    mime_type: "",
-    nome_arquivo: "",
-  });
-
-  // Pendência form state
-  const [pendenciaForm, setPendenciaForm] = useState({
-    descricao: "",
-    solicitada_por: "",
-  });
-
+  const [dataAgendamento, setDataAgendamento] = useState("");
   const { showSuccess, showError } = useToastNotification();
 
-  const { data: sinistro } = useQuery<Sinistro>({
-    queryKey: ["/api/sinistros", sinistroId],
-    enabled: !!sinistroId,
+  // Buscar detalhes do claim
+  const { data: claimData, refetch } = useQuery({
+    queryKey: ["claim-detail", claimId],
+    queryFn: async () => {
+      if (!claimId) throw new Error("Claim ID não fornecido");
+      
+      try {
+        const response = await fetch(`/api/claims/${claimId}`);
+        if (!response.ok) throw new Error("API não disponível");
+        return response.json();
+      } catch (error) {
+        // Fallback para dados fictícios
+        const { 
+          getClaimById, 
+          getEstimativaByClaimId, 
+          getOficinaById, 
+          getAgendaByClaimId, 
+          getTerceiroByClaimId, 
+          getArquivosByClaimId, 
+          getEventosLogByClaimId 
+        } = await import('@/lib/mockData');
+        
+        const claim = getClaimById(claimId);
+        if (!claim) throw new Error("Claim não encontrado");
+        
+        return {
+          claim,
+          estimativa: getEstimativaByClaimId(claimId),
+          oficina: claim.oficina_id ? getOficinaById(claim.oficina_id) : null,
+          agenda: getAgendaByClaimId(claimId),
+          terceiro: getTerceiroByClaimId(claimId),
+          arquivos: getArquivosByClaimId(claimId),
+          eventos: getEventosLogByClaimId(claimId)
+        };
+      }
+    },
+    enabled: !!claimId,
   });
+
+  if (!claimId) {
+    return (
+      <div className="cor-fundo-site min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="cor-titulo text-2xl mb-4">Claim ID não fornecido</h1>
+          <Link href="/dashboard">
+            <Button className="btn-gradient text-white">Voltar ao Dashboard</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!claimData) {
+    return (
+      <div className="cor-fundo-site min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="cor-titulo text-2xl mb-4">Carregando...</h1>
+        </div>
+      </div>
+    );
+  }
+
+  const { claim, estimativa, oficina, agenda, terceiro, arquivos, eventos } = claimData;
+
+  const handleBtnGerarEstimativaIA = async () => {
+    setIsLoading(true);
+    try {
+      const response = await callWebhook("WH_ESTIMATIVA_GERAR", { claim_id: claimId });
+      if (response) {
+        showSuccess("Estimativa IA gerada com sucesso!");
+        refetch();
+      }
+    } catch (error) {
+      showError("Falha ao gerar estimativa IA");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBtnSelecionarOficina = async () => {
+    setIsLoading(true);
+    try {
+      const response = await callWebhook("WH_OFICINAS_ROTEAR_AGENDAR", { 
+        acao: "match", 
+        claim_id: claimId,
+        uf: claim.local_evento_uf 
+      });
+      if (response) {
+        showSuccess("Oficina selecionada com sucesso!");
+        refetch();
+      }
+    } catch (error) {
+      showError("Falha ao selecionar oficina");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBtnAgendarOficina = async () => {
+    if (!dataAgendamento) {
+      showError("Selecione uma data para agendamento");
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const response = await callWebhook("WH_OFICINAS_ROTEAR_AGENDAR", { 
+        acao: "agendar", 
+        claim_id: claimId,
+        data: dataAgendamento 
+      });
+      if (response) {
+        showSuccess("Agendamento confirmado com sucesso!");
+        refetch();
+      }
+    } catch (error) {
+      showError("Falha ao confirmar agendamento");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBtnAutorizarReparo = async () => {
+    setIsLoading(true);
+    try {
+      const response = await callWebhook("WH_SINISTROS_STATUS", { 
+        acao: "autorizar_reparo", 
+        claim_id: claimId 
+      });
+      if (response) {
+        showSuccess("Reparo autorizado com sucesso!");
+        refetch();
+      }
+    } catch (error) {
+      showError("Falha ao autorizar reparo");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBtnMarcarPerdaTotal = async () => {
+    setIsLoading(true);
+    try {
+      const response = await callWebhook("WH_SINISTROS_STATUS", { 
+        acao: "marcar_pt", 
+        claim_id: claimId 
+      });
+      if (response) {
+        showSuccess("Perda total marcada com sucesso!");
+        refetch();
+      }
+    } catch (error) {
+      showError("Falha ao marcar perda total");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBtnGerarLinkTerceiro = async () => {
+    setIsLoading(true);
+    try {
+      const response = await callWebhook("WH_TERCEIROS", { 
+        acao: "gerar_link", 
+        claim_id: claimId 
+      });
+      if (response) {
+        showSuccess("Link do terceiro gerado com sucesso!");
+        refetch();
+      }
+    } catch (error) {
+      showError("Falha ao gerar link do terceiro");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case "aberto": return "bg-gray-600";
-      case "enviado": return "bg-blue-600";
-      case "em_analise": return "bg-yellow-600";
-      case "aprovado": return "bg-green-600";
-      case "negado": return "bg-red-600";
+      case "estimado": return "bg-blue-600";
+      case "autorizado_reparo": return "bg-green-600";
+      case "perda_total": return "bg-red-600";
+      case "negado": return "bg-red-800";
       case "concluido": return "bg-green-800";
       default: return "bg-gray-600";
     }
   };
 
-  const { data: documentos } = useQuery<Documento[]>({
-    queryKey: ["/api/documentos", sinistroId],
-    enabled: !!sinistroId,
-  });
-
-  const { data: pendencias } = useQuery<Pendencia[]>({
-    queryKey: ["/api/pendencias", sinistroId],
-    enabled: !!sinistroId,
-  });
-
-  const { data: andamentos } = useQuery<Andamento[]>({
-    queryKey: ["/api/andamentos", sinistroId],
-    enabled: !!sinistroId,
-  });
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        setUploadForm({
-          ...uploadForm,
-          arquivo_base64: base64.split(",")[1], // Remove data:type;base64, prefix
-          mime_type: file.type,
-          nome_arquivo: file.name,
-        });
-      };
-      reader.readAsDataURL(file);
-    }
+  const formatCurrency = (value?: number) => {
+    if (!value) return "N/A";
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
   };
-
-  const handleUploadDocument = async () => {
-    if (!sinistroId || !uploadForm.tipo_documento || !uploadForm.arquivo_base64) {
-      showError("Preencha todos os campos obrigatórios");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await callWebhook("WH_DOC_UPLOAD", {
-        sinistro_id: sinistroId,
-        ...uploadForm,
-      });
-      showSuccess("Documento anexado");
-      setUploadModalOpen(false);
-      setUploadForm({
-        tipo_documento: "",
-        arquivo_base64: "",
-        mime_type: "",
-        nome_arquivo: "",
-      });
-    } catch (error) {
-      showError("Erro ao anexar documento");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEnviarAviso = async () => {
-    if (!sinistroId) return;
-
-    setIsLoading(true);
-    try {
-      await callWebhook("WH_SINISTRO_ENVIAR_AVISO", { sinistro_id: sinistroId });
-      showSuccess("Aviso enviado");
-    } catch (error) {
-      showError("Erro ao enviar aviso");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAtualizarStatus = async () => {
-    if (!sinistroId || !selectedStatus) {
-      showError("Selecione um status");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await callWebhook("WH_SINISTRO_UPDATE_STATUS", {
-        sinistro_id: sinistroId,
-        novo_status: selectedStatus,
-        motivo_opcional: motivoStatus,
-      });
-      showSuccess("Status atualizado");
-    } catch (error) {
-      showError("Erro ao atualizar status");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCriarPendencia = async () => {
-    if (!sinistroId || !pendenciaForm.descricao || !pendenciaForm.solicitada_por) {
-      showError("Preencha todos os campos");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await callWebhook("WH_PENDENCIA_CREATE", {
-        sinistro_id: sinistroId,
-        ...pendenciaForm,
-      });
-      showSuccess("Pendência criada");
-      setPendenciaModalOpen(false);
-      setPendenciaForm({ descricao: "", solicitada_por: "" });
-    } catch (error) {
-      showError("Erro ao criar pendência");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleConcluirSinistro = async () => {
-    if (!sinistroId) return;
-
-    setIsLoading(true);
-    try {
-      await callWebhook("WH_SINISTRO_CLOSE", { sinistro_id: sinistroId });
-      showSuccess("Sinistro concluído");
-    } catch (error) {
-      showError("Erro ao concluir sinistro");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const calculateDaysRemaining = (prazoLimite: string) => {
-    const today = new Date();
-    const limite = new Date(prazoLimite);
-    const diffTime = limite.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  if (!sinistroId) {
-    return (
-      <div className="cor-fundo-site min-h-screen">
-        <section className="py-12">
-          <div className="container mx-auto px-6">
-            <div className="rounded-lg p-8 container-gradient-dark text-center">
-              <h1 className="text-4xl font-bold text-white mb-4">Detalhe do Sinistro</h1>
-              <p className="text-subtitle-dark text-lg mb-8">
-                Para visualizar os detalhes de um sinistro, você precisa selecioná-lo no Dashboard.
-              </p>
-              
-              <div className="space-y-4">
-                <Link href="/dashboard">
-                  <Button className="btn-gradient text-white font-medium rounded flex items-center mx-auto" data-testid="button-ir-dashboard">
-                    <ArrowLeft className="mr-2" size={16} />
-                    Ir para o Dashboard
-                  </Button>
-                </Link>
-                
-                {dashboardData?.lista?.length > 0 && (
-                  <div className="mt-8">
-                    <p className="text-white mb-4">Ou clique em um sinistro recente:</p>
-                    <div className="max-w-md mx-auto space-y-2">
-                      {dashboardData.lista.slice(0, 3).map((sinistro) => (
-                        <button
-                          key={sinistro.id}
-                          onClick={() => setLocation(`/detalhe-do-sinistro?id=${sinistro.id}`)}
-                          className="w-full p-3 text-left bg-gray-800 hover:bg-gray-700 rounded border border-gray-600 transition-colors"
-                          data-testid={`button-sinistro-${sinistro.id}`}
-                        >
-                          <div className="text-white font-medium">{sinistro.protocolo || "Sem protocolo"}</div>
-                          <div className="text-subtitle-dark text-sm">{sinistro.segurado_nome}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    );
-  }
 
   return (
     <div className="cor-fundo-site min-h-screen">
-      {/* Header Section with Claim Info */}
+      {/* Header com identificação e status */}
       <section className="py-12">
         <div className="container mx-auto px-6">
-          <div className="rounded-lg p-8 container-gradient-dark">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Main Info */}
-              <div className="lg:col-span-2">
-                <h1 className="text-4xl font-bold text-white mb-2">Sinistro</h1>
-                <p className="text-subtitle-dark text-lg mb-6" data-testid="text-segurado">
-                  {sinistro?.segurado_nome || "Carregando..."}
-                </p>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-subtitle-dark text-sm">Protocolo</p>
-                    <p className="text-white font-medium" data-testid="text-protocolo">
-                      {sinistro?.protocolo || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-subtitle-dark text-sm">Seguradora</p>
-                    <p className="text-white font-medium" data-testid="text-seguradora">
-                      {sinistro?.seguradora_nome || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-subtitle-dark text-sm">Placa</p>
-                    <p className="text-white font-medium" data-testid="text-placa">
-                      {sinistro?.placa || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-subtitle-dark text-sm">Tipo</p>
-                    <p className="text-white font-medium" data-testid="text-tipo">
-                      {sinistro?.tipo_sinistro || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-subtitle-dark text-sm">Status</p>
-                    <span className={`px-2 py-1 rounded text-xs font-medium text-white ${getStatusBadgeColor(sinistro?.status || "")}`} data-testid="text-status">
-                      {sinistro?.status?.replace("_", " ") || "—"}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-subtitle-dark text-sm">Data de aviso</p>
-                    <p className="text-white font-medium" data-testid="text-data-aviso">
-                      {sinistro?.data_aviso ? new Date(sinistro.data_aviso).toLocaleDateString("pt-BR") : "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-subtitle-dark text-sm">Prazo limite</p>
-                    <p className="text-white font-medium" data-testid="text-prazo-limite">
-                      {sinistro?.prazo_limite ? new Date(sinistro.prazo_limite).toLocaleDateString("pt-BR") : "—"}
-                    </p>
-                  </div>
+          <div className="rounded-lg p-8 container-gradient">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <Link href="/dashboard">
+                  <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                    <ArrowLeft size={20} />
+                  </Button>
+                </Link>
+                <div>
+                  <h1 className="text-4xl font-bold cor-titulo mb-2">Detalhe do Sinistro</h1>
+                  <p className="cor-subtitulo text-lg">Operar o caso do intake à decisão</p>
                 </div>
               </div>
-
-              {/* SLA Indicator */}
-              <div className="flex items-center justify-center">
-                <div className="text-center p-6 rounded-lg bg-yellow-900 border border-yellow-700">
-                  <div className="text-3xl font-bold text-yellow-300 mb-2" data-testid="text-dias-restantes">
-                    {sinistro?.prazo_limite ? calculateDaysRemaining(sinistro.prazo_limite) : "--"}
-                  </div>
-                  <p className="text-yellow-200 text-sm">dias restantes</p>
-                </div>
+              <Badge className={`px-4 py-2 rounded text-sm font-medium text-white ${getStatusBadgeColor(claim.status)}`}>
+                {claim.status.replace("_", " ")}
+              </Badge>
+            </div>
+            
+            {/* Cabeçalho com identificação */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-gray-800 rounded-lg">
+                <p className="cor-subtitulo text-sm">Claim ID</p>
+                <p className="cor-titulo font-mono text-lg">{claim.id}</p>
+              </div>
+              <div className="text-center p-4 bg-gray-800 rounded-lg">
+                <p className="cor-subtitulo text-sm">Placa</p>
+                <p className="cor-titulo font-semibold text-lg">{claim.placa}</p>
+              </div>
+              <div className="text-center p-4 bg-gray-800 rounded-lg">
+                <p className="cor-subtitulo text-sm">CPF Segurado</p>
+                <p className="cor-titulo text-lg">{claim.cpf_segurado}</p>
+              </div>
+              <div className="text-center p-4 bg-gray-800 rounded-lg">
+                <p className="cor-subtitulo text-sm">Tipo</p>
+                <p className="cor-titulo text-lg">{claim.tipo_sinistro}</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Action Buttons */}
-      <section className="py-8">
-        <div className="container mx-auto px-6">
-          <div className="rounded-lg p-6 container-gradient-dark">
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Dialog open={uploadModalOpen} onOpenChange={setUploadModalOpen}>
-                <DialogTrigger asChild>
-                  <Button className="btn-gradient text-white font-medium rounded flex items-center" data-testid="button-adicionar-documento">
-                    <Paperclip className="mr-2" size={16} />
-                    Adicionar Documento
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="container-gradient-dark">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Anexar Documento</DialogTitle>
-                  </DialogHeader>
+      <div className="container mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Coluna Principal */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Bloco Estimativa */}
+            <Card className="container-gradient no-outline">
+              <CardHeader>
+                <CardTitle className="cor-titulo flex items-center gap-2">
+                  <DollarSign size={24} />
+                  Estimativa IA
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {estimativa ? (
                   <div className="space-y-4">
-                    <div>
-                      <Label className="text-white text-sm font-medium">Tipo de documento *</Label>
-                      <Select value={uploadForm.tipo_documento} onValueChange={(value) => setUploadForm({...uploadForm, tipo_documento: value})}>
-                        <SelectTrigger className="w-full bg-dark border border-gray-600 text-white" data-testid="select-tipo-documento">
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bo">Boletim de Ocorrência</SelectItem>
-                          <SelectItem value="cnh">CNH</SelectItem>
-                          <SelectItem value="crlv">CRLV</SelectItem>
-                          <SelectItem value="fotos_danos">Fotos dos danos</SelectItem>
-                          <SelectItem value="orcamento">Orçamento</SelectItem>
-                          <SelectItem value="outros">Outros</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center p-3 bg-gray-800 rounded">
+                        <p className="cor-subtitulo text-sm">Valor Estimado</p>
+                        <p className="cor-titulo font-semibold text-lg">
+                          {formatCurrency(estimativa.valor_estimado)}
+                        </p>
+                      </div>
+                      <div className="text-center p-3 bg-gray-800 rounded">
+                        <p className="cor-subtitulo text-sm">Horas M.O.</p>
+                        <p className="cor-titulo font-semibold text-lg">{estimativa.horas_mo}h</p>
+                      </div>
+                      <div className="text-center p-3 bg-gray-800 rounded">
+                        <p className="cor-subtitulo text-sm">Prob. PT</p>
+                        <p className={`font-semibold text-lg ${estimativa.prob_pt > 0.7 ? 'text-red-400' : 'text-green-400'}`}>
+                          {(estimativa.prob_pt * 100).toFixed(0)}%
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-white text-sm font-medium">Arquivo *</Label>
-                      <Input
-                        type="file"
-                        onChange={handleFileUpload}
-                        className="w-full bg-dark border border-gray-600 text-white"
-                        data-testid="input-arquivo"
-                      />
-                      <p className="text-subtitle-dark text-xs mt-1">Máximo 10MB</p>
-                    </div>
-                    <div>
-                      <Label className="text-white text-sm font-medium">Nome do arquivo *</Label>
-                      <Input
-                        value={uploadForm.nome_arquivo}
-                        onChange={(e) => setUploadForm({...uploadForm, nome_arquivo: e.target.value})}
-                        placeholder="documento.pdf"
-                        className="w-full bg-dark border border-gray-600 text-white"
-                        data-testid="input-nome-arquivo"
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-4">
-                      <Button variant="outline" onClick={() => setUploadModalOpen(false)} data-testid="button-cancelar-upload">
-                        Cancelar
-                      </Button>
-                      <Button onClick={handleUploadDocument} disabled={isLoading} className="btn-gradient" data-testid="button-anexar">
-                        {isLoading ? "Anexando..." : "Anexar"}
-                      </Button>
-                    </div>
+                    <p className="cor-subtitulo text-sm">
+                      Última estimativa: {new Date(estimativa.created_at).toLocaleString('pt-BR')}
+                    </p>
                   </div>
-                </DialogContent>
-              </Dialog>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="cor-subtitulo mb-4">Nenhuma estimativa gerada ainda</p>
+                    <Button
+                      onClick={handleBtnGerarEstimativaIA}
+                      disabled={isLoading}
+                      className="btn-gradient text-white"
+                      data-testid="BtnGerarEstimativaIA"
+                    >
+                      {isLoading ? "Gerando..." : "Gerar Estimativa IA"}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-              <Button onClick={handleEnviarAviso} disabled={isLoading} className="btn-gradient text-white font-medium rounded flex items-center" data-testid="button-enviar-aviso">
-                <Send className="mr-2" size={16} />
-                {isLoading ? "Preparando..." : "Enviar Aviso"}
-              </Button>
-
-              <Dialog open={pendenciaModalOpen} onOpenChange={setPendenciaModalOpen}>
-                <DialogTrigger asChild>
-                  <Button className="btn-gradient text-white font-medium rounded flex items-center" data-testid="button-criar-pendencia">
-                    <AlertTriangle className="mr-2" size={16} />
-                    Criar Pendência
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="container-gradient-dark">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Criar Pendência</DialogTitle>
-                  </DialogHeader>
+            {/* Bloco Oficinas */}
+            <Card className="container-gradient no-outline">
+              <CardHeader>
+                <CardTitle className="cor-titulo flex items-center gap-2">
+                  <Wrench size={24} />
+                  Oficinas e Agendamento
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {oficina ? (
                   <div className="space-y-4">
-                    <div>
-                      <Label className="text-white text-sm font-medium">Descrição *</Label>
-                      <Textarea
-                        value={pendenciaForm.descricao}
-                        onChange={(e) => setPendenciaForm({...pendenciaForm, descricao: e.target.value})}
-                        rows={3}
-                        placeholder="Descreva a pendência..."
-                        className="w-full bg-dark border border-gray-600 text-white"
-                        data-testid="textarea-descricao-pendencia"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-white text-sm font-medium">Solicitada por *</Label>
-                      <Select value={pendenciaForm.solicitada_por} onValueChange={(value) => setPendenciaForm({...pendenciaForm, solicitada_por: value})}>
-                        <SelectTrigger className="w-full bg-dark border border-gray-600 text-white" data-testid="select-solicitada-por">
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="corretor">Corretor</SelectItem>
-                          <SelectItem value="seguradora">Seguradora</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex justify-end space-x-4">
-                      <Button variant="outline" onClick={() => setPendenciaModalOpen(false)} data-testid="button-cancelar-pendencia">
-                        Cancelar
-                      </Button>
-                      <Button onClick={handleCriarPendencia} disabled={isLoading} className="btn-gradient" data-testid="button-confirmar-pendencia">
-                        {isLoading ? "Criando..." : "Criar Pendência"}
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button className="btn-gradient text-white font-medium rounded flex items-center" data-testid="button-concluir">
-                    <Flag className="mr-2" size={16} />
-                    Concluir
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="container-gradient-dark">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-white">Concluir Sinistro</AlertDialogTitle>
-                    <AlertDialogDescription className="text-subtitle-dark">
-                      Deseja concluir este sinistro? Esta ação não pode ser desfeita.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="text-subtitle-dark border-gray-600">Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleConcluirSinistro} className="btn-gradient" data-testid="button-confirmar-conclusao">
-                      Confirmar
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Status Selector */}
-      <section className="py-8">
-        <div className="container mx-auto px-6">
-          <div className="rounded-lg p-6 container-gradient-dark">
-            <h3 className="text-white font-semibold mb-4">Atualizar Status</h3>
-            <div className="flex flex-wrap gap-4 items-center">
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="bg-dark border border-gray-600 text-white" data-testid="select-status">
-                  <SelectValue placeholder="Selecione o status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="aberto">Aberto</SelectItem>
-                  <SelectItem value="enviado">Enviado</SelectItem>
-                  <SelectItem value="em_analise">Em análise</SelectItem>
-                  <SelectItem value="aprovado">Aprovado</SelectItem>
-                  <SelectItem value="negado">Negado</SelectItem>
-                  <SelectItem value="concluido">Concluído</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                value={motivoStatus}
-                onChange={(e) => setMotivoStatus(e.target.value)}
-                placeholder="Motivo (opcional)"
-                className="bg-dark border border-gray-600 text-white flex-1 max-w-md"
-                data-testid="input-motivo-status"
-              />
-              <Button onClick={handleAtualizarStatus} disabled={isLoading} className="btn-gradient text-white font-medium rounded flex items-center" data-testid="button-atualizar-status">
-                <RotateCcw className="mr-2" size={16} />
-                {isLoading ? "Atualizando..." : "Atualizar Status"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Documents List */}
-      <section className="py-8">
-        <div className="container mx-auto px-6">
-          <div className="rounded-lg p-6 container-gradient-dark">
-            <h3 className="text-white font-semibold mb-4">Documentos Anexados</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-600">
-                    <th className="text-left py-2 px-4 text-white font-medium">Tipo</th>
-                    <th className="text-left py-2 px-4 text-white font-medium">Nome do arquivo</th>
-                    <th className="text-left py-2 px-4 text-white font-medium">Tipo MIME</th>
-                    <th className="text-left py-2 px-4 text-white font-medium">Recebido em</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {documentos?.length ? (
-                    documentos.map((documento) => (
-                      <tr key={documento.id} className="border-b border-gray-700" data-testid={`row-documento-${documento.id}`}>
-                        <td className="py-2 px-4 text-white">{documento.tipo_documento}</td>
-                        <td className="py-2 px-4 text-white">{documento.nome_arquivo}</td>
-                        <td className="py-2 px-4 text-subtitle-dark">{documento.mime_type}</td>
-                        <td className="py-2 px-4 text-subtitle-dark">
-                          {new Date(documento.recebido_em).toLocaleDateString("pt-BR")} {new Date(documento.recebido_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="py-8 px-4 text-center text-subtitle-dark">
-                        Nenhum documento anexado
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pendências List */}
-      <section className="py-8">
-        <div className="container mx-auto px-6">
-          <div className="rounded-lg p-6 container-gradient-dark">
-            <h3 className="text-white font-semibold mb-4">Pendências</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-600">
-                    <th className="text-left py-2 px-4 text-white font-medium">Descrição</th>
-                    <th className="text-left py-2 px-4 text-white font-medium">Solicitada por</th>
-                    <th className="text-left py-2 px-4 text-white font-medium">Status</th>
-                    <th className="text-left py-2 px-4 text-white font-medium">Criada em</th>
-                    <th className="text-left py-2 px-4 text-white font-medium">Resolvida em</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendencias?.length ? (
-                    pendencias.map((pendencia) => (
-                      <tr key={pendencia.id} className="border-b border-gray-700" data-testid={`row-pendencia-${pendencia.id}`}>
-                        <td className="py-2 px-4 text-white">{pendencia.descricao}</td>
-                        <td className="py-2 px-4 text-white">{pendencia.solicitada_por}</td>
-                        <td className="py-2 px-4">
-                          <span className={`px-2 py-1 rounded text-xs font-medium text-white ${pendencia.status === 'resolvida' ? 'bg-green-600' : 'bg-red-600'}`}>
-                            {pendencia.status}
-                          </span>
-                        </td>
-                        <td className="py-2 px-4 text-subtitle-dark">
-                          {new Date(pendencia.criada_em).toLocaleDateString("pt-BR")} {new Date(pendencia.criada_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                        </td>
-                        <td className="py-2 px-4 text-subtitle-dark">
-                          {pendencia.resolvida_em ? 
-                            `${new Date(pendencia.resolvida_em).toLocaleDateString("pt-BR")} ${new Date(pendencia.resolvida_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : 
-                            "—"
-                          }
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="py-8 px-4 text-center text-subtitle-dark">
-                        Nenhuma pendência registrada
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Timeline */}
-      <section className="py-8 pb-20">
-        <div className="container mx-auto px-6">
-          <div className="rounded-lg p-6 container-gradient-dark">
-            <h3 className="text-white font-semibold mb-4">Timeline de Andamentos</h3>
-            <div className="space-y-4">
-              {andamentos?.length ? (
-                andamentos.map((andamento) => (
-                  <div key={andamento.id} className="flex items-start space-x-4 border-l-2 border-blue-500 pl-4" data-testid={`timeline-${andamento.id}`}>
-                    <div className="flex-shrink-0 w-3 h-3 bg-blue-500 rounded-full -ml-6 mt-1"></div>
-                    <div className="flex-1">
-                      <p className="text-white font-medium">{andamento.tipo_evento}</p>
-                      {andamento.descricao && (
-                        <p className="text-subtitle-dark text-sm">{andamento.descricao}</p>
-                      )}
-                      <p className="text-subtitle-dark text-xs mt-1">
-                        {new Date(andamento.criado_em).toLocaleDateString("pt-BR")} {new Date(andamento.criado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    <div className="p-4 bg-gray-800 rounded-lg">
+                      <h4 className="cor-titulo font-semibold mb-2">{oficina.nome}</h4>
+                      <p className="cor-subtitulo text-sm mb-1">
+                        📍 {oficina.cidade}, {oficina.uf}
+                      </p>
+                      <p className="cor-subtitulo text-sm mb-1">
+                        ⏱️ SLA médio: {oficina.sla_medio_dias} dias
+                      </p>
+                      <p className="cor-subtitulo text-sm">
+                        ⭐ Qualidade: {oficina.score_qualidade}/100
                       </p>
                     </div>
+                    
+                    {agenda ? (
+                      agenda.status === 'confirmado' ? (
+                        <div className="p-4 bg-green-900/30 rounded-lg">
+                          <p className="text-green-400 font-semibold mb-2">✅ Agendamento Confirmado</p>
+                          <p className="cor-subtitulo">
+                            Data: {agenda.data_agendada ? new Date(agenda.data_agendada).toLocaleString('pt-BR') : 'N/A'}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="cor-subtitulo">⏳ Agendamento pendente - confirme a data:</p>
+                          <div className="flex gap-3">
+                            <Input
+                              type="datetime-local"
+                              value={dataAgendamento}
+                              onChange={(e) => setDataAgendamento(e.target.value)}
+                              className="flex-1 input-themed no-outline"
+                            />
+                            <Button
+                              onClick={handleBtnAgendarOficina}
+                              disabled={isLoading}
+                              className="btn-gradient text-white"
+                              data-testid="BtnAgendarOficina"
+                            >
+                              {isLoading ? "Confirmando..." : "Confirmar"}
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    ) : (
+                      <p className="cor-subtitulo">Oficina selecionada, mas sem agenda criada.</p>
+                    )}
                   </div>
-                ))
-              ) : (
-                <p className="text-subtitle-dark text-center">Nenhum andamento registrado</p>
-              )}
-            </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="cor-subtitulo mb-4">Nenhuma oficina selecionada ainda</p>
+                    <Button
+                      onClick={handleBtnSelecionarOficina}
+                      disabled={isLoading}
+                      className="btn-gradient text-white"
+                      data-testid="BtnSelecionarOficina"
+                    >
+                      {isLoading ? "Selecionando..." : "Selecionar Oficina"}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Ações de Status */}
+            <Card className="container-gradient no-outline">
+              <CardHeader>
+                <CardTitle className="cor-titulo">Ações do Sinistro</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3">
+                  {claim.status !== 'autorizado_reparo' && (
+                    <Button
+                      onClick={handleBtnAutorizarReparo}
+                      disabled={isLoading}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      data-testid="BtnAutorizarReparo"
+                    >
+                      {isLoading ? "Autorizando..." : "Autorizar Reparo"}
+                    </Button>
+                  )}
+                  
+                  {claim.status !== 'perda_total' && estimativa && estimativa.prob_pt > 0.7 && (
+                    <Button
+                      onClick={handleBtnMarcarPerdaTotal}
+                      disabled={isLoading}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                      data-testid="BtnMarcarPerdaTotal"
+                    >
+                      {isLoading ? "Marcando..." : "Marcar Perda Total"}
+                    </Button>
+                  )}
+                  
+                  {!terceiro && (
+                    <Button
+                      onClick={handleBtnGerarLinkTerceiro}
+                      disabled={isLoading}
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                      data-testid="BtnGerarLinkTerceiro"
+                    >
+                      {isLoading ? "Gerando..." : "Gerar Link Terceiro"}
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Timeline */}
+            <TimelineSinistro claimId={claim.id} eventos={eventos || []} />
+          </div>
+
+          {/* Coluna Lateral */}
+          <div className="space-y-8">
+            {/* Informações do Terceiro */}
+            {terceiro && (
+              <Card className="container-gradient no-outline">
+                <CardHeader>
+                  <CardTitle className="cor-titulo flex items-center gap-2">
+                    <Users size={20} />
+                    Terceiro
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="cor-subtitulo text-sm">Status</p>
+                      <Badge className={terceiro.status === 'dados_recebidos' ? 'bg-green-600' : 'bg-yellow-600'}>
+                        {terceiro.status.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    
+                    {terceiro.nome ? (
+                      <div className="space-y-2">
+                        <div>
+                          <p className="cor-subtitulo text-sm">Nome</p>
+                          <p className="cor-titulo">{terceiro.nome}</p>
+                        </div>
+                        <div>
+                          <p className="cor-subtitulo text-sm">CPF</p>
+                          <p className="cor-titulo">{terceiro.cpf}</p>
+                        </div>
+                        <div>
+                          <p className="cor-subtitulo text-sm">Email</p>
+                          <p className="cor-titulo">{terceiro.email}</p>
+                        </div>
+                        <div>
+                          <p className="cor-subtitulo text-sm">Telefone</p>
+                          <p className="cor-titulo">{terceiro.telefone}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="cor-subtitulo text-sm mb-3">Link gerado, aguardando dados</p>
+                        <div className="flex items-center gap-2 p-2 bg-gray-800 rounded text-sm">
+                          <LinkIcon size={16} className="text-blue-400" />
+                          <span className="cor-titulo font-mono">/terceiro/{terceiro.token}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Documentos e Mídias */}
+            <Card className="container-gradient no-outline">
+              <CardHeader>
+                <CardTitle className="cor-titulo flex items-center gap-2">
+                  <FileText size={20} />
+                  Documentos e Mídias
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {arquivos && arquivos.length > 0 ? (
+                  <div className="space-y-3">
+                    {arquivos.map((arquivo) => (
+                      <div key={arquivo.id} className="flex items-center justify-between p-3 bg-gray-800 rounded">
+                        <div>
+                          <p className="cor-titulo text-sm font-medium">
+                            {arquivo.metadados_json?.nome_arquivo || 'Arquivo'}
+                          </p>
+                          <p className="cor-subtitulo text-xs">
+                            {arquivo.tipo} • {arquivo.fonte} • {new Date(arquivo.created_at).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                        <Button variant="ghost" size="sm" className="text-blue-400">
+                          Ver
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="cor-subtitulo text-center py-4">Nenhum arquivo anexado ainda</p>
+                )}
+                
+                <div className="mt-4">
+                  <UploaderMidia 
+                    claimId={claim.id}
+                    onUpload={async (files) => {
+                      // Implementar upload adicional
+                      showSuccess("Upload realizado!");
+                      refetch();
+                    }}
+                    maxFiles={5}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Informações Gerais */}
+            <Card className="container-gradient no-outline">
+              <CardHeader>
+                <CardTitle className="cor-titulo">Informações Gerais</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Calendar size={16} className="cor-subtitulo" />
+                    <span className="cor-subtitulo">Data do evento:</span>
+                    <span className="cor-titulo">{new Date(claim.data_evento).toLocaleString('pt-BR')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin size={16} className="cor-subtitulo" />
+                    <span className="cor-subtitulo">Local:</span>
+                    <span className="cor-titulo">{claim.local_evento_cidade}, {claim.local_evento_uf}</span>
+                  </div>
+                  {claim.franquia_prevista && (
+                    <div className="flex items-center gap-2">
+                      <DollarSign size={16} className="cor-subtitulo" />
+                      <span className="cor-subtitulo">Franquia:</span>
+                      <span className="cor-titulo">{formatCurrency(claim.franquia_prevista)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Clock size={16} className="cor-subtitulo" />
+                    <span className="cor-subtitulo">Criado em:</span>
+                    <span className="cor-titulo">{new Date(claim.created_at).toLocaleString('pt-BR')}</span>
+                  </div>
+                  {claim.resumo && (
+                    <div className="mt-4">
+                      <p className="cor-subtitulo text-sm mb-2">Resumo:</p>
+                      <p className="cor-titulo text-sm">{claim.resumo}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

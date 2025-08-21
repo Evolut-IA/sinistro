@@ -7,21 +7,28 @@ import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import NovoSinistro from "./pages/NovoSinistro";
 import DetalheSinistro from "./pages/DetalheSinistro";
+import PortalTerceiro from "./pages/PortalTerceiro";
+import OficinasAgendamentos from "./pages/OficinasAgendamentos";
 import Relatorios from "./pages/Relatorios";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
-    <Layout>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/novo-sinistro" component={NovoSinistro} />
-        <Route path="/detalhe-do-sinistro" component={DetalheSinistro} />
-        <Route path="/relatorios" component={Relatorios} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+    <Switch>
+      {/* Rotas com Layout */}
+      <Route path="/" component={() => <Layout><Dashboard /></Layout>} />
+      <Route path="/dashboard" component={() => <Layout><Dashboard /></Layout>} />
+      <Route path="/novo-sinistro" component={() => <Layout><NovoSinistro /></Layout>} />
+      <Route path="/detalhe-do-sinistro" component={() => <Layout><DetalheSinistro /></Layout>} />
+      <Route path="/oficinas-agendamentos" component={() => <Layout><OficinasAgendamentos /></Layout>} />
+      <Route path="/relatorios" component={() => <Layout><Relatorios /></Layout>} />
+      
+      {/* Portal do Terceiro - sem layout */}
+      <Route path="/terceiro/:token" component={PortalTerceiro} />
+      
+      {/* 404 */}
+      <Route component={() => <Layout><NotFound /></Layout>} />
+    </Switch>
   );
 }
 

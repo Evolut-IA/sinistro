@@ -55,6 +55,9 @@
   --cor-texto-principal-degrade-direita: #2155DC;
   --cor-icone-degrade-esquerda: #387EF3;
   --cor-icone-degrade-direita: #2155DC;
+  --cor-texto-input: #FFFFFF;
+  --cor-placeholder-input: #AFAFAF;
+  --cor-background-input: #101010;
 }
 
 .tema-sol {
@@ -72,6 +75,9 @@
   --cor-texto-principal-degrade-direita: #2155DC;
   --cor-icone-degrade-esquerda: #387EF3;
   --cor-icone-degrade-direita: #2155DC;
+  --cor-texto-input: #060606;
+  --cor-placeholder-input: #888888;
+  --cor-background-input: #FFFFFF;
 }
 
 .dark {
@@ -114,6 +120,31 @@
     @apply border-border;
   }
 
+  /* Remover TODOS os contornos e focos */
+  *,
+  *:before,
+  *:after {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  *:focus,
+  *:focus-visible,
+  *:focus-within {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: transparent !important;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: transparent !important;
+  }
+
   body {
     @apply font-sans antialiased;
     font-family: var(--font-sans);
@@ -125,6 +156,96 @@
 @layer components {
   .container-gradient {
     background: linear-gradient(to bottom, var(--cor-container-degrade-baixo), var(--cor-container-degrade-cima));
+  }
+  
+  .input-themed {
+    color: var(--cor-texto-input);
+    background-color: var(--cor-background-input);
+  }
+
+  .input-themed::placeholder {
+    color: var(--cor-placeholder-input);
+    opacity: 1;
+  }
+
+  .input-themed::-webkit-input-placeholder {
+    color: var(--cor-placeholder-input);
+    opacity: 1;
+  }
+
+  .input-themed::-moz-placeholder {
+    color: var(--cor-placeholder-input);
+    opacity: 1;
+  }
+
+  .input-themed:-ms-input-placeholder {
+    color: var(--cor-placeholder-input);
+    opacity: 1;
+  }
+
+  .input-themed:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Estilos específicos para Select placeholder */
+  .input-themed[data-placeholder] {
+    color: var(--cor-placeholder-input);
+  }
+
+  .input-themed:not([data-placeholder]) {
+    color: var(--cor-texto-input);
+  }
+
+  /* Estilos globais para inputs nativos - aplicar apenas no tema escuro (padrão) */
+  input:not(.input-themed),
+  textarea:not(.input-themed),
+  select:not(.input-themed) {
+    color: var(--cor-texto-input);
+    background-color: var(--cor-background-input);
+  }
+
+  input:not(.input-themed)::placeholder,
+  textarea:not(.input-themed)::placeholder {
+    color: var(--cor-placeholder-input);
+    opacity: 1;
+  }
+
+  /* Garantir que o tema Sol (claro) também funcione */
+  .tema-sol input:not(.input-themed),
+  .tema-sol textarea:not(.input-themed),
+  .tema-sol select:not(.input-themed) {
+    color: var(--cor-texto-input);
+    background-color: var(--cor-background-input);
+  }
+
+  .tema-sol input:not(.input-themed)::placeholder,
+  .tema-sol textarea:not(.input-themed)::placeholder {
+    color: var(--cor-placeholder-input);
+    opacity: 1;
+  }
+
+  /* Classes para remover contornos específicos */
+  .no-outline {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .no-outline:focus,
+  .no-outline:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Remover contornos de todos os componentes shadcn/ui */
+  .radix-state-open,
+  .radix-state-closed,
+  .radix-state-checked,
+  .radix-state-unchecked {
+    outline: none !important;
+    box-shadow: none !important;
   }
   
   .btn-gradient {

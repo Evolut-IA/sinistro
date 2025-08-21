@@ -98,7 +98,7 @@ export default function Relatorios() {
                   type="date"
                   value={filters.data_inicio}
                   onChange={(e) => setFilters({...filters, data_inicio: e.target.value})}
-                  className="px-3 py-2 bg-white border border-gray-300 rounded text-dark-bg"
+                  className="px-3 py-2 rounded input-themed no-outline"
                   data-testid="input-data-inicio"
                 />
               </div>
@@ -108,7 +108,7 @@ export default function Relatorios() {
                   type="date"
                   value={filters.data_fim}
                   onChange={(e) => setFilters({...filters, data_fim: e.target.value})}
-                  className="px-3 py-2 bg-white border border-gray-300 rounded text-dark-bg"
+                  className="px-3 py-2 rounded input-themed no-outline"
                   data-testid="input-data-fim"
                 />
               </div>
@@ -176,7 +176,7 @@ export default function Relatorios() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b-2 border-gray-400">
+                  <tr className="no-outline">
                     <th className="text-left py-3 px-4 text-dark-bg font-semibold">Seguradora</th>
                     <th className="text-center py-3 px-4 text-dark-bg font-semibold">Abertos</th>
                     <th className="text-center py-3 px-4 text-dark-bg font-semibold">Enviados</th>
@@ -189,7 +189,7 @@ export default function Relatorios() {
                 <tbody>
                   {relatorioData?.agregados?.length ? (
                     relatorioData.agregados.map((seguradora, index) => (
-                      <tr key={seguradora.seguradora_nome} className="border-b border-gray-300" data-testid={`row-seguradora-${index}`}>
+                      <tr key={seguradora.seguradora_nome} className="no-outline" data-testid={`row-seguradora-${index}`}>
                         <td className="py-3 px-4 text-dark-bg font-medium">{seguradora.seguradora_nome}</td>
                         <td className="py-3 px-4 text-center text-dark-bg">{seguradora.aberto}</td>
                         <td className="py-3 px-4 text-center text-dark-bg">{seguradora.enviado}</td>

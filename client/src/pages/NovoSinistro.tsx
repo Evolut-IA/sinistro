@@ -1,71 +1,86 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { callWebhook } from "@/lib/webhooks";
 import { useToastNotification } from "@/components/Toast";
-import { validateForm } from "@/lib/validation";
+import FormSinistro from "@/components/FormSinistro";
+import UploaderMidia from "@/components/UploaderMidia";
 
-const novoSinistroSchema = z.object({
-  segurado_nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-  segurado_email: z.string().email("E-mail deve ser válido"),
-  segurado_telefone: z.string().min(1, "Telefone é obrigatório"),
-  placa: z.string().min(7, "Placa deve ter 7 ou 8 caracteres").max(8, "Placa deve ter 7 ou 8 caracteres"),
-  seguradora_nome: z.string().min(1, "Seguradora é obrigatória"),
-  tipo_sinistro: z.string().min(1, "Tipo de sinistro deve ser selecionado"),
-  resumo: z.string().optional(),
-});
+interface FormData {
+  placa: string;
+  cpf_segurado: string;
+  data_evento: string;
+  local_evento_cidade: string;
+  local_evento_uf: string;
+  tipo_sinistro: string;
+  resumo?: string;
+}
 
-type NovoSinistroForm = z.infer<typeof novoSinistroSchema>;
+interface ArquivoUpload {
+  id: string;
+  file: File;
+  preview?: string;
+  tipo: string;
+}
 
 export default function NovoSinistro() {
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
+  const [claimId, setClaimId] = useState<string | null>(null);
+  const [step, setStep] = useState<'form' | 'upload' | 'summary'>('form');
   const { showSuccess, showError } = useToastNotification();
 
-  const form = useForm<NovoSinistroForm>({
-    resolver: zodResolver(novoSinistroSchema),
-    defaultValues: {
-      segurado_nome: "",
-      segurado_email: "",
-      segurado_telefone: "",
-      placa: "",
-      seguradora_nome: "",
-      tipo_sinistro: "",
-      resumo: "",
-    },
-  });
-
-  const onSubmit = async (data: NovoSinistroForm) => {
-    if (!validateForm(data, novoSinistroSchema)) {
-      showError("Preencha os campos obrigatórios");
-      return;
-    }
-
+  const handleBtnCriarSinistro = async (data: FormData) => {
     setIsLoading(true);
     try {
-      const response = await callWebhook("WH_SINISTRO_CREATE", data);
-      if (response?.sinistro_id) {
-        showSuccess("Sinistro criado");
-        form.reset();
-        setLocation(`/detalhe-do-sinistro?id=${response.sinistro_id}`);
+      const response = await callWebhook("WH_SINISTROS_CRIAR", data);
+      if (response?.claim_id) {
+        setClaimId(response.claim_id);
+        setStep('upload');
+        showSuccess("Sinistro criado com sucesso! Agora você pode enviar mídias.");
       }
     } catch (error) {
-      showError("Não foi possível criar o sinistro. Tente novamente.");
+      showError("Falha ao criar sinistro. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleBtnEnviarMidia = async (arquivos: ArquivoUpload[]) => {
+    if (!claimId) return;
+    
+    setIsLoading(true);
+    try {
+      const payload = {
+        claim_id: claimId,
+        arquivos: arquivos.map(arquivo => ({
+          nome: arquivo.file.name,
+          tipo: arquivo.tipo,
+          size: arquivo.file.size,
+          // Em produção, aqui faria o upload real do arquivo
+          arquivo_url: `fake-url-${arquivo.id}`
+        }))
+      };
+      
+      const response = await callWebhook("WH_ARQUIVOS_UPLOAD", payload);
+      if (response) {
+        showSuccess("Mídias enviadas com sucesso!");
+        setStep('summary');
+      }
+    } catch (error) {
+      showError("Falha ao enviar mídias.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBtnIrDetalhe = () => {
+    if (claimId) {
+      setLocation(`/detalhe-do-sinistro?id=${claimId}`);
+    }
+  };
+
   const handleCancel = () => {
-    form.reset();
     setLocation("/dashboard");
   };
 
@@ -74,212 +89,107 @@ export default function NovoSinistro() {
       {/* Header Section */}
       <section className="py-12">
         <div className="container mx-auto px-6">
-          <div className="rounded-lg p-8 container-gradient-dark">
-            <h1 className="text-4xl font-bold text-white mb-2">Novo Sinistro</h1>
-            <p className="text-subtitle-dark text-lg">Informe os dados essenciais para abertura</p>
+          <div className="rounded-lg p-8 container-gradient">
+            <h1 className="text-4xl font-bold cor-titulo mb-2">Novo Sinistro</h1>
+            <p className="cor-subtitulo text-lg">Criar sinistro com dados básicos e anexos iniciais</p>
           </div>
         </div>
       </section>
 
-      {/* Info Banner */}
-      <section className="py-8">
-        <div className="container mx-auto px-6">
-          <div className="rounded-lg p-4 bg-blue-900 border border-blue-700">
-            <p className="text-blue-200 text-center">
-              <i className="fas fa-info-circle mr-2"></i>
-              Prazo de referência de 30 dias corridos a partir da data de aviso
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Top Info Image */}
-      <section className="py-8">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-8">
-            <img
-              src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=400"
-              alt="Modern car dashboard with technology interface"
-              className="rounded-lg mx-auto w-full max-w-2xl h-64 object-cover"
+      <div className="container mx-auto px-6 py-8">
+        {/* Etapa 1: FormSinistro */}
+        {step === 'form' && (
+          <div className="space-y-8">
+            <FormSinistro 
+              onSubmit={handleBtnCriarSinistro}
+              isLoading={isLoading}
             />
+            <div className="flex justify-center">
+              <Button
+                onClick={handleCancel}
+                variant="outline"
+                className="px-6 py-2 text-gray-400 font-medium rounded no-outline"
+                data-testid="button-cancelar"
+              >
+                Cancelar
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
+        )}
 
-      {/* Form Section */}
-      <section className="py-8">
-        <div className="container mx-auto px-6">
-          <div className="rounded-lg p-8 container-gradient-dark">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} data-testid="form-novo-sinistro">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <FormField
-                    control={form.control}
-                    name="segurado_nome"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-white text-sm font-medium">Segurado nome *</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Nome completo"
-                            className="w-full px-3 py-2 bg-dark border border-gray-600 rounded text-white"
-                            data-testid="input-segurado-nome"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="segurado_email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-white text-sm font-medium">Segurado e-mail *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="email@exemplo.com"
-                            className="w-full px-3 py-2 bg-dark border border-gray-600 rounded text-white"
-                            data-testid="input-segurado-email"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="segurado_telefone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-white text-sm font-medium">Segurado telefone *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="tel"
-                            placeholder="(11) 99999-9999"
-                            className="w-full px-3 py-2 bg-dark border border-gray-600 rounded text-white"
-                            data-testid="input-segurado-telefone"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="placa"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-white text-sm font-medium">Placa *</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="ABC1234"
-                            className="w-full px-3 py-2 bg-dark border border-gray-600 rounded text-white"
-                            data-testid="input-placa"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="seguradora_nome"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-white text-sm font-medium">Seguradora nome *</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Nome da seguradora"
-                            className="w-full px-3 py-2 bg-dark border border-gray-600 rounded text-white"
-                            data-testid="input-seguradora-nome"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="tipo_sinistro"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-white text-sm font-medium">Tipo de sinistro *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} data-testid="select-tipo-sinistro">
-                          <FormControl>
-                            <SelectTrigger className="w-full px-3 py-2 bg-dark border border-gray-600 rounded text-white">
-                              <SelectValue placeholder="Selecione o tipo" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="colisao">Colisão</SelectItem>
-                            <SelectItem value="roubo_furto">Roubo/Furto</SelectItem>
-                            <SelectItem value="alagamento">Alagamento</SelectItem>
-                            <SelectItem value="incendio">Incêndio</SelectItem>
-                            <SelectItem value="outros">Outros</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="resumo"
-                  render={({ field }) => (
-                    <FormItem className="mb-8">
-                      <FormLabel className="text-white text-sm font-medium">Resumo (opcional)</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          rows={4}
-                          placeholder="Descreva brevemente o ocorrido..."
-                          className="w-full px-3 py-2 bg-dark border border-gray-600 rounded text-white"
-                          data-testid="textarea-resumo"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex justify-end space-x-4">
-                  <Button
-                    type="button"
-                    onClick={handleCancel}
-                    variant="outline"
-                    className="px-6 py-2 text-subtitle-dark font-medium rounded border border-gray-600"
-                    data-testid="button-cancelar"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="px-6 py-2 btn-gradient text-white font-medium rounded"
-                    data-testid="button-criar-sinistro"
-                  >
-                    {isLoading ? "Enviando..." : "Criar Sinistro"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
+        {/* Etapa 2: UploaderMidia inicial */}
+        {step === 'upload' && (
+          <div className="space-y-8">
+            <div className="rounded-lg p-6 container-gradient">
+              <h3 className="cor-titulo font-semibold text-lg mb-4">
+                ✅ Sinistro criado com sucesso!
+              </h3>
+              <p className="cor-subtitulo mb-4">
+                Claim ID: <span className="cor-titulo font-mono">{claimId}</span>
+              </p>
+              <p className="cor-subtitulo">
+                Agora você pode enviar mídias iniciais (fotos, documentos).
+              </p>
+            </div>
+            
+            <UploaderMidia 
+              claimId={claimId || undefined}
+              onUpload={handleBtnEnviarMidia}
+              isLoading={isLoading}
+            />
+            
+            <div className="flex justify-center">
+              <Button
+                onClick={() => setStep('summary')}
+                variant="outline"
+                className="px-6 py-2 text-gray-400 font-medium rounded no-outline"
+              >
+                Pular Upload
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
+        )}
+
+        {/* Etapa 3: Resumo antes do envio */}
+        {step === 'summary' && (
+          <div className="space-y-8">
+            <div className="rounded-lg p-6 container-gradient">
+              <h3 className="cor-titulo font-semibold text-lg mb-4">
+                🎉 Processo Concluído!
+              </h3>
+              <div className="space-y-3">
+                <p className="cor-subtitulo">
+                  <strong className="cor-titulo">Claim ID:</strong> {claimId}
+                </p>
+                <p className="cor-subtitulo">
+                  <strong className="cor-titulo">Status:</strong> Aberto
+                </p>
+                <p className="cor-subtitulo">
+                  Sinistro criado e mídias enviadas com sucesso. 
+                  Agora você pode acessar a página de detalhes para operar o caso.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-center space-x-4">
+              <Button
+                onClick={handleCancel}
+                variant="outline"
+                className="px-6 py-2 text-gray-400 font-medium rounded no-outline"
+              >
+                Voltar ao Dashboard
+              </Button>
+              <Button
+                onClick={handleBtnIrDetalhe}
+                className="btn-gradient text-white font-medium rounded px-8"
+                data-testid="BtnIrDetalhe"
+              >
+                Ir para Detalhes
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

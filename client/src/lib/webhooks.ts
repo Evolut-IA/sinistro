@@ -42,70 +42,214 @@ export const callWebhook = async (webhookName: string, payload: any): Promise<an
 };
 
 const callLocalAPI = async (webhookName: string, payload: any): Promise<any> => {
-  // Map webhook calls to local API endpoints
+  // Map webhook calls to local API endpoints seguindo especificação
   switch (webhookName) {
-    case 'WH_SINISTRO_LIST':
-      const params = new URLSearchParams(payload);
-      const response = await fetch(`/api/dashboard?${params}`);
-      return await response.json();
-      
-    case 'WH_SINISTRO_CREATE':
-      const createResponse = await fetch('/api/sinistros', {
+    // Webhook: Criar Sinistro
+    case 'WH_SINISTROS_CRIAR':
+      const createResponse = await fetch('/api/claims', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       const created = await createResponse.json();
-      return { sinistro_id: created.id, mensagem: 'Sinistro criado com sucesso' };
+      return { claim_id: created.id, status: 'aberto', mensagem: 'Sinistro criado com sucesso' };
       
-    case 'WH_DOC_UPLOAD':
-      const docResponse = await fetch('/api/documentos', {
+    // Webhook: Upload de Arquivos
+    case 'WH_ARQUIVOS_UPLOAD':
+      const uploadResponse = await fetch('/api/arquivos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      return await docResponse.json();
+      const uploaded = await uploadResponse.json();
+      return { 
+        arquivos_ids: uploaded.ids || [uploaded.id], 
+        contagem: uploaded.count || 1,
+        mensagem: 'Arquivos enviados com sucesso' 
+      };
       
-    case 'WH_SINISTRO_ENVIAR_AVISO':
-      // Simulate sending notice
-      const protocol = `PROT-${Date.now()}`;
-      await fetch(`/api/sinistros/${payload.sinistro_id}/protocol`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ protocolo: protocol })
-      });
-      return { protocolo: protocol, mensagem: 'Aviso enviado com sucesso' };
-      
-    case 'WH_SINISTRO_UPDATE_STATUS':
-      await fetch(`/api/sinistros/${payload.sinistro_id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: payload.novo_status })
-      });
-      return { mensagem: 'Status atualizado com sucesso' };
-      
-    case 'WH_PENDENCIA_CREATE':
-      const pendResponse = await fetch('/api/pendencias', {
+    // Webhook: Estimativa IA por Imagem
+    case 'WH_ESTIMATIVA_GERAR':
+      const estimativaResponse = await fetch('/api/estimativas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      return await pendResponse.json();
+      const estimativa = await estimativaResponse.json();
+      return {
+        valor_estimado: estimativa.valor_estimado,
+        horas_mo: estimativa.horas_mo,
+        prob_pt: estimativa.prob_pt,
+        resumo: estimativa.resumo_json,
+        mensagem: 'Estimativa gerada com sucesso'
+      };
       
-    case 'WH_SINISTRO_CLOSE':
-      await fetch(`/api/sinistros/${payload.sinistro_id}/status`, {
-        method: 'PATCH',
+    // Webhook: Oficinas Roteamento e Agendamento
+    case 'WH_OFICINAS_ROTEAR_AGENDAR':
+      const oficinaResponse = await fetch('/api/oficinas/rotear-agendar', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'concluido' })
+        body: JSON.stringify(payload)
       });
-      return { mensagem: 'Sinistro concluído com sucesso' };
+      const oficina = await oficinaResponse.json();
       
-    case 'WH_RELATORIO_GERAR_MENSAL':
-      const relParams = new URLSearchParams(payload);
-      const relResponse = await fetch(`/api/relatorios?${relParams}`);
-      return await relResponse.json();
+      if (payload.acao === 'match') {
+        return {
+          oficina_sugerida: oficina.oficina,
+          agenda_pendente: oficina.agenda,
+          mensagem: 'Oficina selecionada com sucesso'
+        };
+      } else if (payload.acao === 'agendar') {
+        return {
+          agenda_confirmada: oficina.agenda,
+          data_agendada: oficina.data_agendada,
+          mensagem: 'Agendamento confirmado com sucesso'
+        };
+      }
+      break;
+      
+    // Webhook: Status e Autorizações do Sinistro
+    case 'WH_SINISTROS_STATUS':
+      const statusResponse = await fetch('/api/claims/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const status = await statusResponse.json();
+      
+      if (payload.acao === 'autorizar_reparo') {
+        return {
+          status: 'autorizado_reparo',
+          mensagem: 'Reparo autorizado com sucesso'
+        };
+      } else if (payload.acao === 'marcar_pt') {
+        return {
+          status: 'perda_total',
+          mensagem: 'Perda total marcada com sucesso'
+        };
+      }
+      break;
+      
+    // Webhook: Terceiros Link e Submissões
+    case 'WH_TERCEIROS':
+      const terceiroResponse = await fetch('/api/terceiros', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const terceiro = await terceiroResponse.json();
+      
+      if (payload.acao === 'gerar_link') {
+        return {
+          url_portal_terceiro: `/terceiro/${terceiro.token}`,
+          token: terceiro.token,
+          mensagem: 'Link do terceiro gerado com sucesso'
+        };
+      } else if (payload.acao === 'submit') {
+        return {
+          terceiro_id: terceiro.id,
+          status: 'dados_recebidos',
+          mensagem: 'Dados do terceiro recebidos com sucesso'
+        };
+      }
+      break;
+
+    // Compatibilidade com webhooks antigos
+    case 'WH_SINISTRO_LIST':
+      const params = new URLSearchParams(payload);
+      const response = await fetch(`/api/dashboard?${params}`);
+      return await response.json();
+
+    // Fallback usando dados fictícios quando API não estiver disponível
+    default:
+      console.warn(`Webhook ${webhookName} não implementado, usando dados fictícios`);
+      return await handleMockWebhook(webhookName, payload);
+  }
+};
+
+// Handler para dados fictícios
+const handleMockWebhook = async (webhookName: string, payload: any): Promise<any> => {
+  const { getDashboardData, mockClaims, mockOficinas } = await import('./mockData');
+  
+  // Simular delay de rede
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  switch (webhookName) {
+    case 'WH_SINISTROS_CRIAR':
+      const newClaimId = `claim-${Date.now()}`;
+      return {
+        claim_id: newClaimId,
+        status: 'aberto',
+        mensagem: 'Sinistro criado com sucesso (mock)'
+      };
+      
+    case 'WH_ARQUIVOS_UPLOAD':
+      return {
+        arquivos_ids: payload.arquivos?.map(() => `arq-${Date.now()}-${Math.random()}`) || [],
+        contagem: payload.arquivos?.length || 0,
+        mensagem: 'Arquivos enviados com sucesso (mock)'
+      };
+      
+    case 'WH_ESTIMATIVA_GERAR':
+      // Simular valores baseados no tipo de sinistro
+      const isRoubo = payload.claim_id?.includes('roubo') || Math.random() > 0.7;
+      return {
+        valor_estimado: isRoubo ? 35000 : 8500,
+        horas_mo: isRoubo ? 40 : 15,
+        prob_pt: isRoubo ? 0.85 : 0.15,
+        resumo: { pecas_afetadas: isRoubo ? ["Veículo total"] : ["Para-choque", "Farol"] },
+        mensagem: 'Estimativa gerada com sucesso (mock)'
+      };
+      
+    case 'WH_OFICINAS_ROTEAR_AGENDAR':
+      if (payload.acao === 'match') {
+        const oficina = mockOficinas.find(o => o.uf === payload.uf) || mockOficinas[0];
+        return {
+          oficina_sugerida: oficina,
+          agenda_pendente: { status: 'pendente', oficina_id: oficina.id },
+          mensagem: 'Oficina selecionada com sucesso (mock)'
+        };
+      } else if (payload.acao === 'agendar') {
+        return {
+          agenda_confirmada: { status: 'confirmado' },
+          data_agendada: payload.data,
+          mensagem: 'Agendamento confirmado com sucesso (mock)'
+        };
+      }
+      break;
+      
+    case 'WH_SINISTROS_STATUS':
+      if (payload.acao === 'autorizar_reparo') {
+        return {
+          status: 'autorizado_reparo',
+          mensagem: 'Reparo autorizado com sucesso (mock)'
+        };
+      } else if (payload.acao === 'marcar_pt') {
+        return {
+          status: 'perda_total',
+          mensagem: 'Perda total marcada com sucesso (mock)'
+        };
+      }
+      break;
+      
+    case 'WH_TERCEIROS':
+      if (payload.acao === 'gerar_link') {
+        const token = `TERC-${Date.now()}`;
+        return {
+          url_portal_terceiro: `/terceiro/${token}`,
+          token: token,
+          mensagem: 'Link do terceiro gerado com sucesso (mock)'
+        };
+      } else if (payload.acao === 'submit') {
+        return {
+          terceiro_id: `terc-${Date.now()}`,
+          status: 'dados_recebidos',
+          mensagem: 'Dados do terceiro recebidos com sucesso (mock)'
+        };
+      }
+      break;
       
     default:
-      throw new Error(`Webhook não implementado: ${webhookName}`);
+      throw new Error(`Mock webhook não implementado: ${webhookName}`);
   }
 };
