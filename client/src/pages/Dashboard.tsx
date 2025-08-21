@@ -108,16 +108,6 @@ export default function Dashboard() {
           <div className="rounded-lg p-8 container-gradient">
             <h1 className="text-4xl font-bold cor-titulo mb-2">Dashboard Sinistros</h1>
             <p className="cor-subtitulo text-lg">Visão geral e acesso rápido aos casos</p>
-            <div className="flex justify-end mt-4">
-              <Link href="/novo-sinistro">
-                <Button 
-                  className="btn-gradient text-white font-medium rounded" 
-                  data-testid="BtnNovoSinistro"
-                >
-                  Novo Sinistro
-                </Button>
-              </Link>
-            </div>
           </div>
         </div>
       </section>

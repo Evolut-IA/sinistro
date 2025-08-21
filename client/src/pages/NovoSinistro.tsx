@@ -104,16 +104,6 @@ export default function NovoSinistro() {
               onSubmit={handleBtnCriarSinistro}
               isLoading={isLoading}
             />
-            <div className="flex justify-center">
-              <Button
-                onClick={handleCancel}
-                variant="outline"
-                className="px-6 py-2 text-gray-400 font-medium rounded no-outline"
-                data-testid="button-cancelar"
-              >
-                Cancelar
-              </Button>
-            </div>
           </div>
         )}
 

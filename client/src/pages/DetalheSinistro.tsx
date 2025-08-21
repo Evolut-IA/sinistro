@@ -180,7 +180,7 @@ export default function DetalheSinistro() {
       showError("Selecione uma data para agendamento");
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const response = await callWebhook("WH_OFICINAS_ROTEAR_AGENDAR", { 
@@ -273,11 +273,11 @@ export default function DetalheSinistro() {
     }).format(value);
   };
 
-  return (
-    <div className="cor-fundo-site min-h-screen">
+    return (
+      <div className="cor-fundo-site min-h-screen">
       {/* Header com identificação e status */}
-      <section className="py-12">
-        <div className="container mx-auto px-6">
+        <section className="py-12">
+          <div className="container mx-auto px-6">
           <div className="rounded-lg p-8 container-gradient">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
@@ -286,31 +286,31 @@ export default function DetalheSinistro() {
                     <ArrowLeft size={20} />
                   </Button>
                 </Link>
-                <div>
+                  <div>
                   <h1 className="text-4xl font-bold cor-titulo mb-2">Detalhe do Sinistro</h1>
                   <p className="cor-subtitulo text-lg">Operar o caso do intake à decisão</p>
+                  </div>
                 </div>
-              </div>
               <Badge className={`px-4 py-2 rounded text-sm font-medium text-white ${getStatusBadgeColor(claim.status)}`}>
                 {claim.status.replace("_", " ")}
               </Badge>
-            </div>
-            
+              </div>
+
             {/* Cabeçalho com identificação */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-gray-800 rounded-lg">
+              <div className="text-center p-4 container-gradient-dark rounded-lg">
                 <p className="cor-subtitulo text-sm">Claim ID</p>
                 <p className="cor-titulo font-mono text-lg">{claim.id}</p>
               </div>
-              <div className="text-center p-4 bg-gray-800 rounded-lg">
+              <div className="text-center p-4 container-gradient-dark rounded-lg">
                 <p className="cor-subtitulo text-sm">Placa</p>
                 <p className="cor-titulo font-semibold text-lg">{claim.placa}</p>
-              </div>
-              <div className="text-center p-4 bg-gray-800 rounded-lg">
+                  </div>
+              <div className="text-center p-4 container-gradient-dark rounded-lg">
                 <p className="cor-subtitulo text-sm">CPF Segurado</p>
                 <p className="cor-titulo text-lg">{claim.cpf_segurado}</p>
-              </div>
-              <div className="text-center p-4 bg-gray-800 rounded-lg">
+                </div>
+              <div className="text-center p-4 container-gradient-dark rounded-lg">
                 <p className="cor-subtitulo text-sm">Tipo</p>
                 <p className="cor-titulo text-lg">{claim.tipo_sinistro}</p>
               </div>
@@ -335,17 +335,17 @@ export default function DetalheSinistro() {
                 {estimativa ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center p-3 bg-gray-800 rounded">
+                      <div className="text-center p-3 container-gradient-dark rounded">
                         <p className="cor-subtitulo text-sm">Valor Estimado</p>
                         <p className="cor-titulo font-semibold text-lg">
                           {formatCurrency(estimativa.valor_estimado)}
                         </p>
                       </div>
-                      <div className="text-center p-3 bg-gray-800 rounded">
+                      <div className="text-center p-3 container-gradient-dark rounded">
                         <p className="cor-subtitulo text-sm">Horas M.O.</p>
                         <p className="cor-titulo font-semibold text-lg">{estimativa.horas_mo}h</p>
                       </div>
-                      <div className="text-center p-3 bg-gray-800 rounded">
+                      <div className="text-center p-3 container-gradient-dark rounded">
                         <p className="cor-subtitulo text-sm">Prob. PT</p>
                         <p className={`font-semibold text-lg ${estimativa.prob_pt > 0.7 ? 'text-red-400' : 'text-green-400'}`}>
                           {(estimativa.prob_pt * 100).toFixed(0)}%
@@ -366,7 +366,7 @@ export default function DetalheSinistro() {
                       data-testid="BtnGerarEstimativaIA"
                     >
                       {isLoading ? "Gerando..." : "Gerar Estimativa IA"}
-                    </Button>
+                  </Button>
                   </div>
                 )}
               </CardContent>
@@ -383,7 +383,7 @@ export default function DetalheSinistro() {
               <CardContent>
                 {oficina ? (
                   <div className="space-y-4">
-                    <div className="p-4 bg-gray-800 rounded-lg">
+                    <div className="p-4 container-gradient-dark rounded-lg">
                       <h4 className="cor-titulo font-semibold mb-2">{oficina.nome}</h4>
                       <p className="cor-subtitulo text-sm mb-1">
                         📍 {oficina.cidade}, {oficina.uf}
@@ -403,12 +403,12 @@ export default function DetalheSinistro() {
                           <p className="cor-subtitulo">
                             Data: {agenda.data_agendada ? new Date(agenda.data_agendada).toLocaleString('pt-BR') : 'N/A'}
                           </p>
-                        </div>
+                    </div>
                       ) : (
                         <div className="space-y-3">
                           <p className="cor-subtitulo">⏳ Agendamento pendente - confirme a data:</p>
                           <div className="flex gap-3">
-                            <Input
+                      <Input
                               type="datetime-local"
                               value={dataAgendamento}
                               onChange={(e) => setDataAgendamento(e.target.value)}
@@ -421,9 +421,9 @@ export default function DetalheSinistro() {
                               data-testid="BtnAgendarOficina"
                             >
                               {isLoading ? "Confirmando..." : "Confirmar"}
-                            </Button>
-                          </div>
-                        </div>
+                      </Button>
+                    </div>
+                  </div>
                       )
                     ) : (
                       <p className="cor-subtitulo">Oficina selecionada, mas sem agenda criada.</p>
@@ -471,7 +471,7 @@ export default function DetalheSinistro() {
                       data-testid="BtnMarcarPerdaTotal"
                     >
                       {isLoading ? "Marcando..." : "Marcar Perda Total"}
-                    </Button>
+              </Button>
                   )}
                   
                   {!terceiro && (
@@ -482,7 +482,7 @@ export default function DetalheSinistro() {
                       data-testid="BtnGerarLinkTerceiro"
                     >
                       {isLoading ? "Gerando..." : "Gerar Link Terceiro"}
-                    </Button>
+                  </Button>
                   )}
                 </div>
               </CardContent>
@@ -518,29 +518,29 @@ export default function DetalheSinistro() {
                           <p className="cor-subtitulo text-sm">Nome</p>
                           <p className="cor-titulo">{terceiro.nome}</p>
                         </div>
-                        <div>
+                    <div>
                           <p className="cor-subtitulo text-sm">CPF</p>
                           <p className="cor-titulo">{terceiro.cpf}</p>
-                        </div>
-                        <div>
+                    </div>
+                    <div>
                           <p className="cor-subtitulo text-sm">Email</p>
                           <p className="cor-titulo">{terceiro.email}</p>
-                        </div>
+                    </div>
                         <div>
                           <p className="cor-subtitulo text-sm">Telefone</p>
                           <p className="cor-titulo">{terceiro.telefone}</p>
-                        </div>
-                      </div>
+                    </div>
+                  </div>
                     ) : (
                       <div className="text-center py-4">
                         <p className="cor-subtitulo text-sm mb-3">Link gerado, aguardando dados</p>
-                        <div className="flex items-center gap-2 p-2 bg-gray-800 rounded text-sm">
+                        <div className="flex items-center gap-2 p-2 container-gradient-dark rounded text-sm">
                           <LinkIcon size={16} className="text-blue-400" />
                           <span className="cor-titulo font-mono">/terceiro/{terceiro.token}</span>
-                        </div>
-                      </div>
+            </div>
+          </div>
                     )}
-                  </div>
+        </div>
                 </CardContent>
               </Card>
             )}
@@ -556,8 +556,8 @@ export default function DetalheSinistro() {
               <CardContent>
                 {arquivos && arquivos.length > 0 ? (
                   <div className="space-y-3">
-                    {arquivos.map((arquivo) => (
-                      <div key={arquivo.id} className="flex items-center justify-between p-3 bg-gray-800 rounded">
+                    {arquivos.map((arquivo: Arquivo) => (
+                      <div key={arquivo.id} className="flex items-center justify-between p-3 container-gradient-dark rounded">
                         <div>
                           <p className="cor-titulo text-sm font-medium">
                             {arquivo.metadados_json?.nome_arquivo || 'Arquivo'}
@@ -568,10 +568,10 @@ export default function DetalheSinistro() {
                         </div>
                         <Button variant="ghost" size="sm" className="text-blue-400">
                           Ver
-                        </Button>
-                      </div>
+              </Button>
+            </div>
                     ))}
-                  </div>
+        </div>
                 ) : (
                   <p className="cor-subtitulo text-center py-4">Nenhum arquivo anexado ainda</p>
                 )}
@@ -586,7 +586,7 @@ export default function DetalheSinistro() {
                     }}
                     maxFiles={5}
                   />
-                </div>
+            </div>
               </CardContent>
             </Card>
 
@@ -601,36 +601,36 @@ export default function DetalheSinistro() {
                     <Calendar size={16} className="cor-subtitulo" />
                     <span className="cor-subtitulo">Data do evento:</span>
                     <span className="cor-titulo">{new Date(claim.data_evento).toLocaleString('pt-BR')}</span>
-                  </div>
+            </div>
                   <div className="flex items-center gap-2">
                     <MapPin size={16} className="cor-subtitulo" />
                     <span className="cor-subtitulo">Local:</span>
                     <span className="cor-titulo">{claim.local_evento_cidade}, {claim.local_evento_uf}</span>
-                  </div>
+          </div>
                   {claim.franquia_prevista && (
                     <div className="flex items-center gap-2">
                       <DollarSign size={16} className="cor-subtitulo" />
                       <span className="cor-subtitulo">Franquia:</span>
                       <span className="cor-titulo">{formatCurrency(claim.franquia_prevista)}</span>
-                    </div>
+        </div>
                   )}
                   <div className="flex items-center gap-2">
                     <Clock size={16} className="cor-subtitulo" />
                     <span className="cor-subtitulo">Criado em:</span>
                     <span className="cor-titulo">{new Date(claim.created_at).toLocaleString('pt-BR')}</span>
-                  </div>
+                    </div>
                   {claim.resumo && (
                     <div className="mt-4">
                       <p className="cor-subtitulo text-sm mb-2">Resumo:</p>
                       <p className="cor-titulo text-sm">{claim.resumo}</p>
-                    </div>
-                  )}
+                  </div>
+              )}
                 </div>
               </CardContent>
             </Card>
+            </div>
           </div>
         </div>
-      </div>
     </div>
   );
 }

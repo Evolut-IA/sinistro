@@ -58,6 +58,8 @@
   --cor-texto-input: #FFFFFF;
   --cor-placeholder-input: #AFAFAF;
   --cor-background-input: #101010;
+  --cor-dropdown-background: #101010;
+  --cor-dropdown-text: #FFFFFF;
 }
 
 .tema-sol {
@@ -78,6 +80,8 @@
   --cor-texto-input: #060606;
   --cor-placeholder-input: #888888;
   --cor-background-input: #FFFFFF;
+  --cor-dropdown-background: #FFFFFF;
+  --cor-dropdown-text: #060606;
 }
 
 .dark {
@@ -285,5 +289,19 @@
 
   .cor-icone-botoes {
     color: var(--cor-icone-botoes);
+  }
+
+  /* Estilos para ícones de calendário dos inputs de data no modo escuro 'Lua' */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1);
+    opacity: 1;
+  }
+
+  /* Garantir que no tema Sol (claro) os ícones mantenham a cor padrão */
+  .tema-sol input[type="date"]::-webkit-calendar-picker-indicator,
+  .tema-sol input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: none;
+    opacity: 1;
   }
 }
