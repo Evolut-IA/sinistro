@@ -46,6 +46,21 @@ export default function Relatorios() {
 
   const { data: relatorioData, refetch } = useQuery<RelatorioData>({
     queryKey: ["/api/relatorios", filters],
+    queryFn: async () => {
+      if (!filters.data_inicio || !filters.data_fim) {
+        return null;
+      }
+      
+      const params = new URLSearchParams();
+      params.set('data_inicio', filters.data_inicio);
+      params.set('data_fim', filters.data_fim);
+      
+      const response = await fetch(`/api/relatorios?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Erro ao buscar relatório');
+      }
+      return response.json();
+    },
     enabled: false,
   });
 
@@ -57,11 +72,8 @@ export default function Relatorios() {
 
     setIsLoading(true);
     try {
-      const response = await callWebhook("WH_RELATORIO_GERAR_MENSAL", filters);
-      if (response) {
-        await refetch();
-        showSuccess("Relatório atualizado");
-      }
+      await refetch();
+      showSuccess("Relatório gerado com sucesso");
     } catch (error) {
       showError("Não foi possível gerar o relatório. Tente novamente.");
     } finally {

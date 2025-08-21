@@ -56,7 +56,7 @@ export default function Dashboard() {
         if (filters.status) params.set('status', filters.status);
         if (filters.periodo) params.set('periodo', filters.periodo);
         
-        const url = `/api/claims/dashboard?${params.toString()}`;
+        const url = `/api/dashboard?${params.toString()}`;
         const response = await fetch(url);
         if (!response.ok) {
           throw new Error('API not available, using mock data');

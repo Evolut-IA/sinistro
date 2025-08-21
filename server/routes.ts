@@ -1,26 +1,25 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
-import { storage } from "./storage";
-import { insertSinistroSchema } from "@shared/schema";
+import { getStorage } from "./storage";
+import { insertSinistroSchema, insertClaimSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Dashboard endpoint - get sinistros list with filters
+  // Dashboard endpoint - get claims list with filters
   app.get("/api/dashboard", async (req, res) => {
     try {
-      const { data_inicio, data_fim, busca, status, seguradora, pagina = 1, tamanho_pagina = 10 } = req.query;
+      const { data_inicio, data_fim, busca, status, periodo } = req.query;
       
       const filters = {
         data_inicio: data_inicio as string,
         data_fim: data_fim as string,
         busca: busca as string,
-        status: status ? (status as string).split(',') : [],
-        seguradora: seguradora as string,
-        pagina: parseInt(pagina as string),
-        tamanho_pagina: parseInt(tamanho_pagina as string),
+        status: status as string,
+        periodo: periodo as string,
       };
 
-      const result = await storage.getSinistrosList(filters);
+      const storage = await getStorage();
+      const result = await storage.getDashboardData(filters);
       res.json(result);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -32,6 +31,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/sinistros/:id", async (req, res) => {
     try {
       const { id } = req.params;
+      const storage = await getStorage();
       const sinistro = await storage.getSinistroById(id);
       
       if (!sinistro) {
@@ -49,6 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/documentos/:sinistroId", async (req, res) => {
     try {
       const { sinistroId } = req.params;
+      const storage = await getStorage();
       const documentos = await storage.getDocumentosBySinistroId(sinistroId);
       res.json(documentos);
     } catch (error) {
@@ -61,6 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pendencias/:sinistroId", async (req, res) => {
     try {
       const { sinistroId } = req.params;
+      const storage = await getStorage();
       const pendencias = await storage.getPendenciasBySinistroId(sinistroId);
       res.json(pendencias);
     } catch (error) {
@@ -73,6 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/andamentos/:sinistroId", async (req, res) => {
     try {
       const { sinistroId } = req.params;
+      const storage = await getStorage();
       const andamentos = await storage.getAndamentosBySinistroId(sinistroId);
       res.json(andamentos);
     } catch (error) {
@@ -90,6 +93,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Período é obrigatório" });
       }
 
+      const storage = await getStorage();
       const result = await storage.getRelatorioMensal(data_inicio as string, data_fim as string);
       res.json(result);
     } catch (error) {
@@ -98,10 +102,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get claim detailed data for DetalheSinistro page
+  app.get("/api/claims/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const storage = await getStorage();
+      
+      // Get main claim data
+      const claim = await storage.getClaimById(id);
+      if (!claim) {
+        return res.status(404).json({ message: "Claim não encontrado" });
+      }
+
+      // Get related data
+      const [estimativa, oficina, agenda, terceiro, arquivos, eventos] = await Promise.all([
+        storage.getEstimativaByClaimId(id),
+        claim.oficina_id ? storage.getOficinaById(claim.oficina_id) : null,
+        storage.getAgendaByClaimId(id),
+        storage.getTerceiroByClaimId(id),
+        storage.getArquivosByClaimId(id),
+        storage.getEventosLogByClaimId(id)
+      ]);
+
+      res.json({
+        claim,
+        estimativa,
+        oficina,
+        agenda,
+        terceiro,
+        arquivos,
+        eventos
+      });
+    } catch (error) {
+      console.error("Error fetching claim details:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Create new sinistro
   app.post("/api/sinistros", async (req, res) => {
     try {
       const validatedData = insertSinistroSchema.parse(req.body);
+      const storage = await getStorage();
       const sinistro = await storage.createSinistro(validatedData);
       
       // Add creation event to andamentos
@@ -125,6 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { protocolo } = req.body;
       
+      const storage = await getStorage();
       await storage.updateSinistroProtocol(id, protocolo);
       
       // Add protocol event to andamentos
@@ -148,6 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { status } = req.body;
       
+      const storage = await getStorage();
       await storage.updateSinistroStatus(id, status);
       
       // Add status change event to andamentos
@@ -168,6 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create documento
   app.post("/api/documentos", async (req, res) => {
     try {
+      const storage = await getStorage();
       const documento = await storage.createDocumento(req.body);
       
       // Add document upload event to andamentos
@@ -188,6 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create pendencia
   app.post("/api/pendencias", async (req, res) => {
     try {
+      const storage = await getStorage();
       const pendencia = await storage.createPendencia(req.body);
       
       // Add pendencia creation event to andamentos
