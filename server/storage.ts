@@ -14,10 +14,12 @@ import {
   type Claim,
   type InsertClaim,
   type Estimativa,
+  type InsertEstimativa,
   type Oficina,
   type Agenda,
   type Terceiro,
   type Arquivo,
+  type InsertArquivo,
   type EventoLog,
   sinistros,
   documentos,
@@ -75,10 +77,12 @@ export interface IStorage {
   
   // Related data for claims
   getEstimativaByClaimId(claimId: string): Promise<Estimativa | undefined>;
+  createEstimativa(estimativa: InsertEstimativa): Promise<Estimativa>;
   getOficinaById(oficinaId: string): Promise<Oficina | undefined>;
   getAgendaByClaimId(claimId: string): Promise<Agenda | undefined>;
   getTerceiroByClaimId(claimId: string): Promise<Terceiro | undefined>;
   getArquivosByClaimId(claimId: string): Promise<Arquivo[]>;
+  createArquivo(arquivo: InsertArquivo): Promise<Arquivo>;
   getEventosLogByClaimId(claimId: string): Promise<EventoLog[]>;
   
   // Sinistros (Legacy)
@@ -511,10 +515,30 @@ export class PostgresStorage implements IStorage {
         .where(eq(estimativas.claim_id, claimId))
         .orderBy(desc(estimativas.created_at))
         .limit(1);
-      
+
       return result[0];
     } catch (error) {
       console.error("Error getting estimativa by claim ID:", error);
+      throw error;
+    }
+  }
+
+  async createEstimativa(estimativa: InsertEstimativa): Promise<Estimativa> {
+    try {
+      const result = await this.db
+        .insert(estimativas)
+        .values(estimativa)
+        .returning();
+
+      // Update claim with estimativa reference and probability
+      await this.db
+        .update(claims)
+        .set({ estimativa_id: result[0].id, prob_pt: estimativa.prob_pt })
+        .where(eq(claims.id, estimativa.claim_id));
+
+      return result[0];
+    } catch (error) {
+      console.error("Error creating estimativa:", error);
       throw error;
     }
   }
@@ -572,10 +596,24 @@ export class PostgresStorage implements IStorage {
         .from(arquivos)
         .where(eq(arquivos.claim_id, claimId))
         .orderBy(desc(arquivos.created_at));
-      
+
       return result;
     } catch (error) {
       console.error("Error getting arquivos by claim ID:", error);
+      throw error;
+    }
+  }
+
+  async createArquivo(arquivo: InsertArquivo): Promise<Arquivo> {
+    try {
+      const result = await this.db
+        .insert(arquivos)
+        .values(arquivo)
+        .returning();
+
+      return result[0];
+    } catch (error) {
+      console.error("Error creating arquivo:", error);
       throw error;
     }
   }

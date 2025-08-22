@@ -264,6 +264,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Upload arquivos
+  app.post("/api/arquivos", async (req, res) => {
+    try {
+      const { claim_id, arquivos } = req.body;
+      if (!claim_id || !Array.isArray(arquivos)) {
+        return res.status(400).json({ message: "Dados inválidos" });
+      }
+
+      const storage = await getStorage();
+      const created = [];
+      for (const arq of arquivos) {
+        const novo = await storage.createArquivo({
+          claim_id,
+          fonte: arq.fonte || "segurado",
+          tipo: arq.tipo,
+          arquivo_url: arq.arquivo_url,
+          metadados_json: { nome: arq.nome, size: arq.size }
+        });
+        created.push(novo);
+      }
+
+      res.status(201).json({ ids: created.map(a => a.id), count: created.length });
+    } catch (error) {
+      console.error("Error uploading arquivos:", error);
+      res.status(500).json({ message: "Erro ao salvar arquivos" });
+    }
+  });
+
+  // Create estimativa
+  app.post("/api/estimativas", async (req, res) => {
+    try {
+      const { claim_id } = req.body;
+      if (!claim_id) {
+        return res.status(400).json({ message: "claim_id é obrigatório" });
+      }
+
+      const storage = await getStorage();
+      const estimativa = await storage.createEstimativa({
+        claim_id,
+        valor_estimado: "10000",
+        horas_mo: "10",
+        prob_pt: "0.5",
+        resumo_json: {}
+      });
+
+      res.status(201).json(estimativa);
+    } catch (error) {
+      console.error("Error creating estimativa:", error);
+      res.status(500).json({ message: "Erro ao criar estimativa" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
