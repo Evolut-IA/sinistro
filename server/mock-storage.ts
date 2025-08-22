@@ -1,14 +1,16 @@
 import { IStorage } from "./storage";
-import { 
-  type Claim, 
-  type InsertClaim, 
-  type Sinistro, 
+import {
+  type Claim,
+  type InsertClaim,
+  type Sinistro,
   type InsertSinistro,
   type Estimativa,
+  type InsertEstimativa,
   type Oficina,
   type Agenda,
   type Terceiro,
   type Arquivo,
+  type InsertArquivo,
   type EventoLog
 } from "@shared/schema";
 
@@ -66,6 +68,9 @@ const mockClaims: Claim[] = [
     resumo: "Colisão traseira em semáforo"
   }
 ];
+
+const mockEstimativas: Estimativa[] = [];
+const mockArquivos: Arquivo[] = [];
 
 export class MockStorage implements IStorage {
   
@@ -205,7 +210,9 @@ export class MockStorage implements IStorage {
 
   // Mock implementations for new claim-related methods
   async getEstimativaByClaimId(claimId: string): Promise<Estimativa | undefined> {
-    console.log("🔄 Using mock data for estimativa");
+    const estimativa = mockEstimativas.find(e => e.claim_id === claimId);
+    if (estimativa) return estimativa;
+
     if (claimId === "claim-b-456") {
       return {
         id: "est-b-456",
@@ -261,18 +268,27 @@ export class MockStorage implements IStorage {
   }
 
   async getArquivosByClaimId(claimId: string): Promise<Arquivo[]> {
-    console.log("🔄 Using mock data for arquivos");
-    return [
-      {
-        id: "arq-1",
-        created_at: new Date(),
-        claim_id: claimId,
-        fonte: "segurado",
-        tipo: "foto_danos",
-        arquivo_url: "/mock/photo1.jpg",
-        metadados_json: { nome_arquivo: "danos_frente.jpg" }
-      }
-    ];
+    return mockArquivos.filter(a => a.claim_id === claimId);
+  }
+
+  async createEstimativa(estimativa: InsertEstimativa): Promise<Estimativa> {
+    const newEst: Estimativa = {
+      id: `est-${Date.now()}`,
+      created_at: new Date(),
+      ...estimativa
+    } as Estimativa;
+    mockEstimativas.push(newEst);
+    return newEst;
+  }
+
+  async createArquivo(arquivo: InsertArquivo): Promise<Arquivo> {
+    const newArq: Arquivo = {
+      id: `arq-${Date.now()}`,
+      created_at: new Date(),
+      ...arquivo
+    } as Arquivo;
+    mockArquivos.push(newArq);
+    return newArq;
   }
 
   async getEventosLogByClaimId(claimId: string): Promise<EventoLog[]> {
