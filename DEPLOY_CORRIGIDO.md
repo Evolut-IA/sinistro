@@ -10,7 +10,11 @@
 - **Antes**: `cross-env` estava em `devDependencies` (removido em produção)
 - **Depois**: `cross-env` movido para `dependencies` (disponível em produção)
 
-### 3. **Scripts de Start** ✅
+### 3. **Dependência vite** ✅
+- **Antes**: `vite` estava em `devDependencies` (removido em produção)
+- **Depois**: `vite` movido para `dependencies` (disponível em produção)
+
+### 4. **Scripts de Start** ✅
 - **Antes**: `npm start` dependia do `cross-env`
 - **Depois**: `npm run start:prod` com fallback para `NODE_ENV=production`
 
@@ -134,5 +138,7 @@ npm ls @types/node
 3. ✅ **Scripts de start otimizados** - Fallback para NODE_ENV
 4. ✅ **Procfile atualizado** - Usa o script correto
 5. ✅ **Servidor com fallback** - Define NODE_ENV automaticamente
+6. ✅ **Importação condicional do vite** - Usa versão de produção sem dependências desnecessárias
+7. ✅ **Build otimizado** - Esbuild define NODE_ENV=production durante a compilação
 
 **Agora o deploy deve funcionar perfeitamente!** 🎉
