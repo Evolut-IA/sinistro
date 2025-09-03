@@ -147,7 +147,8 @@ serving on http://localhost:5000
 7. ✅ **Servidor com fallback** - Define NODE_ENV automaticamente
 8. ✅ **Importação condicional** - Vite só carregado em desenvolvimento
 9. ✅ **Configuração do vite otimizada** - Sem dependências externas
-10. ✅ **Build otimizado** - Esbuild sem definições complexas
+10. ✅ **Arquivo de produção separado** - Sem importações do vite
+11. ✅ **Build otimizado** - Esbuild compila arquivo específico
 
 ## 🆘 **Se Ainda Houver Problemas**
 
