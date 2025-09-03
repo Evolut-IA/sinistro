@@ -2,15 +2,10 @@ import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 
-// Set NODE_ENV to production if not specified
-if (!process.env.NODE_ENV) {
-  process.env.NODE_ENV = 'production';
-}
-
 // Import vite functions based on environment
 let setupVite: any, serveStatic: any, log: any;
 
-if (process.env.NODE_ENV === 'development') {
+if (NODE_ENV === 'development') {
   const viteModule = await import('./vite');
   setupVite = viteModule.setupVite;
   serveStatic = viteModule.serveStatic;
@@ -70,7 +65,7 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (process.env.NODE_ENV === "development") {
+  if (NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
