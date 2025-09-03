@@ -17,7 +17,8 @@ function log(message: string, source = "express") {
 }
 
 function serveStatic(app: express.Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  // Use absolute path to dist/public directory
+  const distPath = path.resolve(process.cwd(), "dist", "public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
@@ -25,11 +26,14 @@ function serveStatic(app: express.Express) {
     );
   }
 
+  console.log(`Serving static files from: ${distPath}`);
   app.use(express.static(distPath));
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    const indexPath = path.resolve(distPath, "index.html");
+    console.log(`Serving index.html from: ${indexPath}`);
+    res.sendFile(indexPath);
   });
 }
 
@@ -68,23 +72,33 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  try {
+    console.log("Starting server...");
+    const server = await registerRoutes(app);
+    console.log("Routes registered successfully");
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
-  });
+      console.error(`Error: ${message}`);
+      res.status(status).json({ message });
+      throw err;
+    });
 
-  // In production, just serve static files
-  serveStatic(app);
+    // In production, just serve static files
+    console.log("Setting up static file serving...");
+    serveStatic(app);
 
-  // ALWAYS serve the app on port 5000 for Easypanel compatibility
-  // Easypanel maps internal port 5000 to external port 80
-  const port = 5000;
-  server.listen(port, "0.0.0.0", () => {
-    log(`serving on http://0.0.0.0:${port}`);
-  });
+    // ALWAYS serve the app on port 5000 for Easypanel compatibility
+    // Easypanel maps internal port 5000 to external port 80
+    const port = 5000;
+    server.listen(port, "0.0.0.0", () => {
+      log(`serving on http://0.0.0.0:${port}`);
+      console.log("Server is ready to accept connections");
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
 })();
