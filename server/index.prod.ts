@@ -1,26 +1,36 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import fs from "fs";
+import path from "path";
 
-// Set NODE_ENV to production if not specified
-if (!process.env.NODE_ENV) {
-  process.env.NODE_ENV = 'production';
+// Production version - no vite imports
+function log(message: string, source = "express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+
+  console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-// Import vite functions based on environment
-let setupVite: any, serveStatic: any, log: any;
+function serveStatic(app: express.Express) {
+  const distPath = path.resolve(import.meta.dirname, "public");
 
-if (process.env.NODE_ENV === 'development') {
-  const viteModule = await import('./vite');
-  setupVite = viteModule.setupVite;
-  serveStatic = viteModule.serveStatic;
-  log = viteModule.log;
-} else {
-  // In production, use the production version directly
-  const { log: prodLog, serveStatic: prodServeStatic, setupVite: prodSetupVite } = await import('./vite.prod');
-  setupVite = prodSetupVite;
-  serveStatic = prodServeStatic;
-  log = prodLog;
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+    );
+  }
+
+  app.use(express.static(distPath));
+
+  // fall through to index.html if the file doesn't exist
+  app.use("*", (_req, res) => {
+    res.sendFile(path.resolve(distPath, "index.html"));
+  });
 }
 
 const app = express();
@@ -68,14 +78,8 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (process.env.NODE_ENV === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+  // In production, just serve static files
+  serveStatic(app);
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.

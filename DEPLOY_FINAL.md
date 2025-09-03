@@ -14,17 +14,29 @@
 - **Antes**: `vite` estava em `devDependencies` (removido em produção)
 - **Depois**: `vite` movido para `dependencies` (disponível em produção)
 
-### 4. **Scripts de Start** ✅
+### 4. **Dependência @vitejs/plugin-react** ✅
+- **Antes**: `@vitejs/plugin-react` estava em `devDependencies` (removido em produção)
+- **Depois**: `@vitejs/plugin-react` movido para `dependencies` (disponível em produção)
+
+### 5. **Scripts de Start** ✅
 - **Antes**: `npm start` dependia do `cross-env`
 - **Depois**: `npm run start:prod` com fallback para `NODE_ENV=production`
 
-### 5. **Importação condicional do vite** ✅
+### 6. **Importação condicional do vite** ✅
 - **Antes**: Servidor sempre importava `vite` (erro em produção)
 - **Depois**: Importação condicional baseada no ambiente
 
-### 6. **Build otimizado** ✅
+### 7. **Configuração do vite otimizada** ✅
+- **Antes**: `vite.config.ts` importava plugins desnecessários em produção
+- **Depois**: Configuração inline sem dependências externas
+
+### 8. **Arquivo de produção separado** ✅
+- **Antes**: Mesmo arquivo usado para desenvolvimento e produção
+- **Depois**: `server/index.prod.ts` separado sem importações do vite
+
+### 9. **Build otimizado** ✅
 - **Antes**: Esbuild incluía todas as dependências
-- **Depois**: Esbuild define `NODE_ENV=production` durante a compilação
+- **Depois**: Esbuild compila arquivo de produção específico
 
 ## 🔧 **Arquivos Modificados**
 
@@ -32,8 +44,9 @@
 ```json
 {
   "dependencies": {
-    "cross-env": "^10.0.0",  // ← Movido para dependencies
-    "vite": "^5.4.19"         // ← Movido para dependencies
+    "cross-env": "^10.0.0",           // ← Movido para dependencies
+    "vite": "^5.4.19",                // ← Movido para dependencies
+    "@vitejs/plugin-react": "^4.3.2"  // ← Movido para dependencies
   },
   "scripts": {
     "start": "node dist/index.js",           // ← Script simples
@@ -50,16 +63,13 @@
 web: npm run start:prod  // ← Usa o script com variáveis de ambiente
 ```
 
-### `server/index.ts`
+### `server/index.prod.ts` (NOVO)
 ```typescript
-// Importação condicional baseada no ambiente
-if (process.env.NODE_ENV === 'development') {
-  const viteModule = await import('./vite');
-  // ... configuração de desenvolvimento
-} else {
-  const viteProdModule = await import('./vite.prod');
-  // ... configuração de produção
-}
+// Arquivo de produção sem importações do vite
+import "dotenv/config";
+import express from "express";
+import { registerRoutes } from "./routes";
+// ... sem importações condicionais
 ```
 
 ### `server/vite.prod.ts` (NOVO)
@@ -75,7 +85,7 @@ export function serveStatic(app: Express) {
 ### 1. **Commit das Correções**
 ```bash
 git add .
-git commit -m "Fix: vite dependency and conditional imports for production"
+git commit -m "Fix: Separate production file without vite dependencies"
 git push
 ```
 
@@ -131,11 +141,13 @@ serving on http://localhost:5000
 1. ✅ **Node.js 20.18.0** - Versão suportada pelo Heroku
 2. ✅ **cross-env em dependencies** - Disponível em produção
 3. ✅ **vite em dependencies** - Disponível em produção
-4. ✅ **Scripts de start otimizados** - Fallback para NODE_ENV
-5. ✅ **Procfile atualizado** - Usa o script correto
-6. ✅ **Servidor com fallback** - Define NODE_ENV automaticamente
-7. ✅ **Importação condicional** - Vite só carregado em desenvolvimento
-8. ✅ **Build otimizado** - Esbuild define NODE_ENV durante compilação
+4. ✅ **@vitejs/plugin-react em dependencies** - Disponível em produção
+5. ✅ **Scripts de start otimizados** - Fallback para NODE_ENV
+6. ✅ **Procfile atualizado** - Usa o script correto
+7. ✅ **Servidor com fallback** - Define NODE_ENV automaticamente
+8. ✅ **Importação condicional** - Vite só carregado em desenvolvimento
+9. ✅ **Configuração do vite otimizada** - Sem dependências externas
+10. ✅ **Build otimizado** - Esbuild sem definições complexas
 
 ## 🆘 **Se Ainda Houver Problemas**
 
