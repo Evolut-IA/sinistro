@@ -2,6 +2,7 @@
   "name": "sinistro-app",
   "description": "Aplicação de gestão de sinistros",
   "buildpack": "heroku/buildpacks:24",
+  "nodeVersion": "20.18.0",
   "environment": {
     "NODE_ENV": "production",
     "PORT": "5000"

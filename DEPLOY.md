@@ -18,8 +18,8 @@ Configurações específicas para o Heroku Buildpack.
 ### 3. easypanel.json
 Configurações específicas para o Easypanel.
 
-### 4. .nvmrc
-Especifica a versão do Node.js (20.16.11).
+### 4. .nvmrc e .node-version
+Especificam a versão do Node.js (20.18.0).
 
 ### 5. Dockerfile (Alternativo)
 Para deploy via Docker se preferir não usar Buildpacks.
@@ -76,7 +76,7 @@ Após o deploy, você pode verificar se está funcionando:
 
 ### Erro de Build
 - Verifique se todas as dependências estão no `package.json`
-- Confirme se o Node.js 20.16.11 está sendo usado
+- Confirme se o Node.js 20.18.0 está sendo usado
 
 ### Erro de Runtime
 - Verifique as variáveis de ambiente
