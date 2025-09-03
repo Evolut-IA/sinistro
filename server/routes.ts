@@ -5,6 +5,15 @@ import { getStorage } from "./storage";
 import { insertSinistroSchema, insertClaimSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint for Easypanel
+  app.get("/api/health", (req, res) => {
+    res.status(200).json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
+  });
+
   // Dashboard endpoint - get claims list with filters
   app.get("/api/dashboard", async (req, res) => {
     try {

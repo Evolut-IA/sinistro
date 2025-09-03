@@ -1,0 +1,21 @@
+{
+  "name": "sinistro-app",
+  "description": "Aplicação de gestão de sinistros",
+  "buildpack": "heroku/buildpacks:24",
+  "environment": {
+    "NODE_ENV": "production",
+    "PORT": "5000"
+  },
+  "ports": [
+    {
+      "internal": 5000,
+      "external": 80
+    }
+  ],
+  "healthcheck": {
+    "path": "/api/health",
+    "interval": "30s",
+    "timeout": "10s",
+    "retries": 3
+  }
+}

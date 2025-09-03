@@ -1,0 +1,23 @@
+{
+  "name": "sinistro-app",
+  "description": "Aplicação de gestão de sinistros",
+  "repository": "https://github.com/yourusername/sinistro",
+  "keywords": ["node", "express", "react", "typescript"],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "env": {
+    "NODE_ENV": {
+      "description": "Environment for the application",
+      "value": "production"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  }
+}
