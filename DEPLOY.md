@@ -4,6 +4,8 @@
 
 Este projeto está configurado para ser implantado no Easypanel usando o modo de construção `heroku/builder:24` através de Buildpacks.
 
+**⚠️ IMPORTANTE**: A versão do Node.js foi corrigida para `20.18.0` (versão estável suportada pelo Heroku Buildpack).
+
 ## Arquivos de Configuração Criados
 
 ### 1. Procfile
@@ -21,7 +23,13 @@ Configurações específicas para o Easypanel.
 ### 4. .nvmrc e .node-version
 Especificam a versão do Node.js (20.18.0).
 
-### 5. Dockerfile (Alternativo)
+### 5. .buildpacks
+Especifica explicitamente o buildpack do Node.js a ser usado.
+
+### 6. heroku.yml
+Configuração alternativa para deploy via Heroku.
+
+### 7. Dockerfile (Alternativo)
 Para deploy via Docker se preferir não usar Buildpacks.
 
 ## Passos para Deploy no Easypanel
@@ -77,6 +85,21 @@ Após o deploy, você pode verificar se está funcionando:
 ### Erro de Build
 - Verifique se todas as dependências estão no `package.json`
 - Confirme se o Node.js 20.18.0 está sendo usado
+
+### Erro: "Unknown Node.js version"
+Se você encontrar o erro "Unknown Node.js version", significa que a versão especificada não é suportada pelo Heroku Buildpack.
+
+**Solução**: Use uma das versões suportadas:
+- `20.18.0` ✅ (recomendado)
+- `20.17.0`
+- `20.16.0`
+- `20.15.0`
+
+**Arquivos que controlam a versão**:
+- `.nvmrc`
+- `.node-version`
+- `package.json` (seção `engines`)
+- `app.json` (seção `engines`)
 
 ### Erro de Runtime
 - Verifique as variáveis de ambiente
