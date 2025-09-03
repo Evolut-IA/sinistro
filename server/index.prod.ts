@@ -90,12 +90,22 @@ app.use((req, res, next) => {
     console.log("Setting up static file serving...");
     serveStatic(app);
 
-    // ALWAYS serve the app on port 5000 for Easypanel compatibility
-    // Easypanel maps internal port 5000 to external port 80
-    const port = 5000;
+    // Add a simple health check route
+    app.get('/health', (req, res) => {
+      res.status(200).json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        port: port
+      });
+    });
+
+    // Use PORT from environment or default to 5000
+    const port = parseInt(process.env.PORT || '5000', 10);
     server.listen(port, "0.0.0.0", () => {
       log(`serving on http://0.0.0.0:${port}`);
-      console.log("Server is ready to accept connections");
+      console.log(`Server is ready to accept connections on port ${port}`);
+      console.log(`External URL: http://localhost:${port}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
