@@ -41,7 +41,7 @@ Para deploy via Docker se preferir não usar Buildpacks.
 3. **Configure o Buildpack:**
    - Buildpack: `heroku/buildpacks:24`
    - Comando de build: `npm run build`
-   - Comando de start: `npm start`
+   - Comando de start: `npm run start:prod` (ou deixe o Procfile gerenciar)
    - Porta: `5000`
 
 4. **Configure as variáveis de ambiente:**
@@ -85,6 +85,14 @@ Após o deploy, você pode verificar se está funcionando:
 ### Erro de Build
 - Verifique se todas as dependências estão no `package.json`
 - Confirme se o Node.js 20.18.0 está sendo usado
+
+### Erro: "cross-env: not found"
+Se você encontrar o erro "cross-env: not found", significa que a dependência não está disponível em produção.
+
+**Solução**: 
+- O `cross-env` foi movido para `dependencies` (não mais em `devDependencies`)
+- O servidor agora define `NODE_ENV=production` por padrão
+- Use o script `start:prod` para garantir que as variáveis de ambiente sejam definidas
 
 ### Erro: "Unknown Node.js version"
 Se você encontrar o erro "Unknown Node.js version", significa que a versão especificada não é suportada pelo Heroku Buildpack.
